@@ -3,10 +3,11 @@ title: bonsai reduce command
 status: blocked
 priority: medium
 created: 2026-03-26T21:19:26Z
-updated: 2026-03-26T21:19:39Z
+updated: 2026-03-26T21:19:40Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: b91a452
+blocks: 5b4ac88
 
 Wire clap args to bonsai_reduce: parse input, create ShellTest, configure parallelism/bounds, run reduction, write output. --lang overrides auto-detection.
