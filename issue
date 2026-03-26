@@ -1,0 +1,11 @@
+id: c115368
+title: Session persistence with full PRNG state
+status: open
+priority: medium
+created: 2026-03-26T21:19:25Z
+updated: 2026-03-26T21:19:25Z
+author: Norman Nunley, Jr
+assignee: Norman Nunley, Jr
+hash_source: content
+
+Serialize: corpus index, node pool cache, findings hashes, stats, full ChaCha8Rng state. serde + bincode. Version header + checksum. Corrupted/incompatible → warning + fresh start.
