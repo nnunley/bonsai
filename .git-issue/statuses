@@ -1,0 +1,28 @@
+# git-issue status machine definition
+# mode: strict (reject invalid transitions) | permissive (warn but allow)
+mode: permissive
+
+# Statuses: name | color | description
+status: open        | default | New issue, not yet started
+status: in_progress | yellow  | Actively being worked on
+status: review      | blue    | Awaiting feedback or review
+status: blocked     | red     | Blocked by a dependency
+status: deferred    | yellow  | On hold, will revisit later
+status: closed      | gray    | Completed or resolved
+
+# Transitions: from → to
+transition: open → in_progress
+transition: open → blocked
+transition: open → deferred
+transition: open → closed
+transition: in_progress → review
+transition: in_progress → blocked
+transition: in_progress → deferred
+transition: in_progress → closed
+transition: review → in_progress
+transition: review → closed
+transition: blocked → open
+transition: blocked → in_progress
+transition: deferred → open
+transition: deferred → in_progress
+transition: closed → open
