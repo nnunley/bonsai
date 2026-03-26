@@ -3,10 +3,11 @@ title: Core Library
 status: open
 priority: medium
 created: 2026-03-26T21:31:32Z
-updated: 2026-03-26T21:31:47Z
+updated: 2026-03-26T21:31:58Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 parent_of: 163cbab,38ad80b,7fcb05d,bb30cdb,80478b5,9697fda,d2e5eaa,390cbf0
+depends_on: 59ac0d3
 
 bonsai-core: parsing, SupertypeProvider, compatibility, transforms, validity checking
