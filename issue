@@ -8,6 +8,6 @@ author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: 6221036
-blocks: dc09fa8
+blocks: dc09fa8,c115368
 
 FindingStore: content hash (xxhash-128) + normalized stderr index. Default normalization: strip hex addresses, numeric sequences 4+ digits, absolute paths. Extensible via --normalize-stderr.
