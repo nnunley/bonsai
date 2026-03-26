@@ -1,0 +1,11 @@
+id: 5c926db
+title: CLI
+status: open
+priority: medium
+created: 2026-03-26T21:31:32Z
+updated: 2026-03-26T21:31:32Z
+author: Norman Nunley, Jr
+assignee: Norman Nunley, Jr
+hash_source: content
+
+bonsai-cli: unified CLI with reduce, fuzz, languages subcommands
