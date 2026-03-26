@@ -3,9 +3,10 @@ title: Fuzzer integration tests
 status: open
 priority: medium
 created: 2026-03-26T21:19:25Z
-updated: 2026-03-26T21:19:25Z
+updated: 2026-03-26T21:19:38Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
+depends_on: dc09fa8
 
 E2E: fuzz buggy Python processor, verify dedup, auto-reduction, persistence, diversity-guided, --max-execs. Deterministic (fixed PRNG, --jobs 1).
