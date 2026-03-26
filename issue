@@ -1,0 +1,11 @@
+id: 390cbf0
+title: Core unit tests
+status: open
+priority: medium
+created: 2026-03-26T21:19:24Z
+updated: 2026-03-26T21:19:24Z
+author: Norman Nunley, Jr
+assignee: Norman Nunley, Jr
+hash_source: content
+
+Coverage gap review. Edge cases: empty source, single-token, deeply nested trees. Test grammar with zero supertypes. Test multiple grammars (Python, JS, Rust).
