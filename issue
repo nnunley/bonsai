@@ -3,9 +3,10 @@ title: SupertypeProvider trait and implementations
 status: open
 priority: medium
 created: 2026-03-26T21:19:24Z
-updated: 2026-03-26T21:19:24Z
+updated: 2026-03-26T21:19:27Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
+depends_on: e2ce96a
 
 Define SupertypeProvider trait. Implement LanguageApiProvider (wraps Language::supertypes()), QueryFileProvider (loads supertypes.scm), ChainProvider (tries in order, merges results). Cache mappings.
