@@ -144,7 +144,8 @@ fn test_replacement_at_boundaries() {
 fn test_error_set_empty_tree() {
     let lang = languages::get_language("python").unwrap();
     let tree = parse::parse(b"", &lang).unwrap();
-    let errors = validity::ErrorSet::from_tree(&tree);
+    let source = b"";
+    let errors = validity::ErrorSet::from_tree(&tree, source);
     assert!(errors.is_empty());
 }
 

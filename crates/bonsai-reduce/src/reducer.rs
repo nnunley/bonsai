@@ -79,10 +79,10 @@ pub fn reduce(
     };
 
     // Collect initial errors for lenient mode
-    let initial_errors = if config.strict {
+    let mut initial_errors = if config.strict {
         None
     } else {
-        let errors = validity::ErrorSet::from_tree(&tree);
+        let errors = validity::ErrorSet::from_tree(&tree, &current_source);
         if errors.is_empty() {
             None
         } else {
@@ -163,6 +163,13 @@ pub fn reduce(
                 // Known interesting -- accept
                 current_source = new_source;
                 tree = bonsai_core::parse::parse(&current_source, &config.language).unwrap();
+                // Update initial_errors for lenient mode
+                if !config.strict {
+                    initial_errors = {
+                        let errors = validity::ErrorSet::from_tree(&tree, &current_source);
+                        if errors.is_empty() { None } else { Some(errors) }
+                    };
+                }
                 queue.rebuild(&tree);
                 reductions += 1;
                 accepted = true;
@@ -177,6 +184,13 @@ pub fn reduce(
             if interesting {
                 current_source = new_source;
                 tree = bonsai_core::parse::parse(&current_source, &config.language).unwrap();
+                // Update initial_errors for lenient mode
+                if !config.strict {
+                    initial_errors = {
+                        let errors = validity::ErrorSet::from_tree(&tree, &current_source);
+                        if errors.is_empty() { None } else { Some(errors) }
+                    };
+                }
                 queue.rebuild(&tree);
                 reductions += 1;
                 accepted = true;

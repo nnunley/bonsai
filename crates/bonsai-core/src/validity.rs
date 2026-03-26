@@ -34,20 +34,22 @@ pub fn apply_replacement(source: &[u8], replacement: &Replacement) -> Vec<u8> {
     result
 }
 
-/// A set of error locations in a parse tree.
+/// A set of error signatures in a parse tree.
 /// Used to distinguish pre-existing errors from new ones.
+/// Errors are identified by (node_kind, source_text) rather than byte position,
+/// so they remain stable when byte offsets shift due to earlier deletions.
 #[derive(Debug, Clone)]
 pub struct ErrorSet {
-    /// Set of (start_byte, end_byte) for ERROR and MISSING nodes.
-    errors: HashSet<(usize, usize)>,
+    /// Set of (node_kind, source_text_of_error_region) for ERROR and MISSING nodes.
+    errors: HashSet<(String, Vec<u8>)>,
 }
 
 impl ErrorSet {
     /// Collect all ERROR and MISSING nodes from a tree.
-    pub fn from_tree(tree: &Tree) -> Self {
+    pub fn from_tree(tree: &Tree, source: &[u8]) -> Self {
         let mut errors = HashSet::new();
         let mut cursor = tree.root_node().walk();
-        collect_errors_recursive(&mut cursor, &mut errors);
+        collect_errors_recursive(&mut cursor, source, &mut errors);
         Self { errors }
     }
 
@@ -57,9 +59,9 @@ impl ErrorSet {
     }
 
     /// Check if a tree has any NEW errors not in this set.
-    pub fn has_new_errors(&self, tree: &Tree) -> bool {
+    pub fn has_new_errors(&self, tree: &Tree, source: &[u8]) -> bool {
         let mut cursor = tree.root_node().walk();
-        has_new_error_recursive(&mut cursor, &self.errors)
+        has_new_error_recursive(&mut cursor, source, &self.errors)
     }
 
     /// Number of errors.
@@ -74,15 +76,20 @@ impl ErrorSet {
 
 fn collect_errors_recursive(
     cursor: &mut tree_sitter::TreeCursor,
-    errors: &mut HashSet<(usize, usize)>,
+    source: &[u8],
+    errors: &mut HashSet<(String, Vec<u8>)>,
 ) {
     let node = cursor.node();
     if node.is_error() || node.is_missing() {
-        errors.insert((node.start_byte(), node.end_byte()));
+        let text = source
+            .get(node.start_byte()..node.end_byte())
+            .unwrap_or_default()
+            .to_vec();
+        errors.insert((node.kind().to_string(), text));
     }
     if cursor.goto_first_child() {
         loop {
-            collect_errors_recursive(cursor, errors);
+            collect_errors_recursive(cursor, source, errors);
             if !cursor.goto_next_sibling() {
                 break;
             }
@@ -93,17 +100,22 @@ fn collect_errors_recursive(
 
 fn has_new_error_recursive(
     cursor: &mut tree_sitter::TreeCursor,
-    known_errors: &HashSet<(usize, usize)>,
+    source: &[u8],
+    known_errors: &HashSet<(String, Vec<u8>)>,
 ) -> bool {
     let node = cursor.node();
-    if (node.is_error() || node.is_missing())
-        && !known_errors.contains(&(node.start_byte(), node.end_byte()))
-    {
-        return true; // Found a new error — early return
+    if node.is_error() || node.is_missing() {
+        let text = source
+            .get(node.start_byte()..node.end_byte())
+            .unwrap_or_default()
+            .to_vec();
+        if !known_errors.contains(&(node.kind().to_string(), text)) {
+            return true; // Found a new error — early return
+        }
     }
     if cursor.goto_first_child() {
         loop {
-            if has_new_error_recursive(cursor, known_errors) {
+            if has_new_error_recursive(cursor, source, known_errors) {
                 cursor.goto_parent();
                 return true;
             }
@@ -187,7 +199,7 @@ pub fn try_replacement(
         }
         Some(known) => {
             // Lenient mode: only reject new errors
-            if known.has_new_errors(&tree) {
+            if known.has_new_errors(&tree, &new_source) {
                 None
             } else {
                 Some(new_source)
@@ -251,16 +263,18 @@ mod tests {
     #[test]
     fn test_error_set_from_clean_tree() {
         let lang = languages::get_language("python").unwrap();
-        let tree = crate::parse::parse(b"x = 1", &lang).unwrap();
-        let errors = ErrorSet::from_tree(&tree);
+        let source = b"x = 1";
+        let tree = crate::parse::parse(source, &lang).unwrap();
+        let errors = ErrorSet::from_tree(&tree, source);
         assert!(errors.is_empty());
     }
 
     #[test]
     fn test_error_set_from_broken_tree() {
         let lang = languages::get_language("python").unwrap();
-        let tree = crate::parse::parse(b"def )", &lang).unwrap();
-        let errors = ErrorSet::from_tree(&tree);
+        let source = b"def )";
+        let tree = crate::parse::parse(source, &lang).unwrap();
+        let errors = ErrorSet::from_tree(&tree, source);
         assert!(errors.has_errors());
     }
 
@@ -268,13 +282,15 @@ mod tests {
     fn test_error_set_detects_new_errors() {
         let lang = languages::get_language("python").unwrap();
         // Start with a file that has an error
-        let tree1 = crate::parse::parse(b"def )\nx = 1", &lang).unwrap();
-        let initial = ErrorSet::from_tree(&tree1);
+        let source1 = b"def )\nx = 1";
+        let tree1 = crate::parse::parse(source1, &lang).unwrap();
+        let initial = ErrorSet::from_tree(&tree1, source1);
         assert!(initial.has_errors());
 
-        // Parse a different broken version — should have NEW errors at different positions
-        let tree2 = crate::parse::parse(b"def )\nx = )", &lang).unwrap();
-        assert!(initial.has_new_errors(&tree2));
+        // Parse a different broken version — should have NEW errors with different content
+        let source2 = b"def )\nx = )";
+        let tree2 = crate::parse::parse(source2, &lang).unwrap();
+        assert!(initial.has_new_errors(&tree2, source2));
     }
 
     #[test]
@@ -312,15 +328,15 @@ mod tests {
         // Source already has an error on line 1; lines 2-3 are valid
         let source = b"x = )\ny = 1\nz = 2";
         let tree = crate::parse::parse(source, &lang).unwrap();
-        let initial = ErrorSet::from_tree(&tree);
+        let initial = ErrorSet::from_tree(&tree, source);
         assert!(initial.has_errors());
 
-        // Now parse the source with "z = 2" removed — the error on line 1 should remain at same position
+        // Now parse the source with "z = 2" removed — the error on line 1 should remain
         let new_source = b"x = )\ny = 1\n";
         let new_tree = crate::parse::parse(new_source, &lang).unwrap();
-        // Verify no new errors were introduced (the error at ")" should be at same byte offset)
+        // Verify no new errors were introduced (the error has same content)
         assert!(
-            !initial.has_new_errors(&new_tree),
+            !initial.has_new_errors(&new_tree, new_source),
             "Removing a trailing line should not introduce new errors"
         );
 
@@ -377,5 +393,37 @@ mod tests {
             tree_has_errors(&tree),
             "Incomplete code should have errors/missing nodes"
         );
+    }
+
+    #[test]
+    fn test_lenient_mode_with_error_before_deletion() {
+        let lang = languages::get_language("python").unwrap();
+        // Error at "x = )" — then valid code after
+        let source = b"x = )\ny = 1\nz = 2";
+        let tree = crate::parse::parse(source, &lang).unwrap();
+        let initial = ErrorSet::from_tree(&tree, source);
+        assert!(initial.has_errors());
+
+        // Delete "y = 1\n" (bytes 6..12) — this is AFTER the error, should work
+        let r = Replacement { start_byte: 6, end_byte: 12, new_bytes: vec![] };
+        let result = try_replacement(source, &r, &lang, Some(&initial));
+        assert!(result.is_some(), "Deleting after error should be accepted");
+    }
+
+    #[test]
+    fn test_lenient_mode_deletion_before_error_no_false_reject() {
+        let lang = languages::get_language("python").unwrap();
+        // Valid code, then error
+        let source = b"y = 1\nx = )\nz = 2";
+        let tree = crate::parse::parse(source, &lang).unwrap();
+        let initial = ErrorSet::from_tree(&tree, source);
+        assert!(initial.has_errors());
+
+        // Delete "y = 1\n" (bytes 0..6) — this is BEFORE the error, shifts it
+        let r = Replacement { start_byte: 0, end_byte: 6, new_bytes: vec![] };
+        let result = try_replacement(source, &r, &lang, Some(&initial));
+        // After fix: the error "x = )" still exists with same content, just shifted
+        // So this should be accepted (no NEW errors)
+        assert!(result.is_some(), "Deleting before error should be accepted (error just shifted, same content)");
     }
 }
