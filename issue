@@ -3,9 +3,10 @@ title: Set up grammar submodules
 status: open
 priority: medium
 created: 2026-03-26T21:19:24Z
-updated: 2026-03-26T21:19:24Z
+updated: 2026-03-26T21:19:26Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
+depends_on: 8d4870a
 
 Add git submodules for tree-sitter-python, tree-sitter-javascript, tree-sitter-rust under grammars/
