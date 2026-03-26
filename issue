@@ -1,9 +1,9 @@
 id: 535413c
 title: Fuzzer
-status: blocked
+status: open
 priority: medium
 created: 2026-03-26T21:31:32Z
-updated: 2026-03-26T21:32:02Z
+updated: 2026-03-26T22:23:53Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
