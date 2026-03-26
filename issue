@@ -1,9 +1,9 @@
 id: e2ce96a
 title: Implement build.rs in bonsai-core
-status: open
+status: closed
 priority: medium
 created: 2026-03-26T21:19:24Z
-updated: 2026-03-26T21:44:18Z
+updated: 2026-03-26T21:50:06Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
