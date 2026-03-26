@@ -1,0 +1,11 @@
+id: 59ac0d3
+title: Scaffolding
+status: open
+priority: medium
+created: 2026-03-26T21:31:32Z
+updated: 2026-03-26T21:31:32Z
+author: Norman Nunley, Jr
+assignee: Norman Nunley, Jr
+hash_source: content
+
+Project setup: workspace, grammar submodules, registry, build system
