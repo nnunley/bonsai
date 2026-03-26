@@ -3,9 +3,10 @@ title: Finding deduplication with xxhash-128
 status: open
 priority: medium
 created: 2026-03-26T21:19:25Z
-updated: 2026-03-26T21:19:25Z
+updated: 2026-03-26T21:19:36Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
+depends_on: 6221036
 
 FindingStore: content hash (xxhash-128) + normalized stderr index. Default normalization: strip hex addresses, numeric sequences 4+ digits, absolute paths. Extensible via --normalize-stderr.
