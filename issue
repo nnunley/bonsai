@@ -9,6 +9,6 @@ assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: 21866db
 blocks: fb5dd76
-relates_to: dc09fa8,c115368,0de4b13,8139928,b7b3782
+relates_to: c115368,0de4b13,8139928,b7b3782
 
 splice(): pick random node, positional match first, type fallback via SupertypeProvider. Reparse + ERROR/MISSING check. Configurable mutation count (default uniform [1,3]).
