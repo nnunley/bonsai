@@ -1,0 +1,11 @@
+id: acbcc50
+title: bonsai languages command
+status: open
+priority: medium
+created: 2026-03-26T21:19:26Z
+updated: 2026-03-26T21:19:26Z
+author: Norman Nunley, Jr
+assignee: Norman Nunley, Jr
+hash_source: content
+
+Call list_languages() from generated registry module. Sort alphabetically, align columns.
