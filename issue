@@ -3,9 +3,10 @@ title: Fuzzer progress reporting
 status: open
 priority: medium
 created: 2026-03-26T21:19:25Z
-updated: 2026-03-26T21:19:25Z
+updated: 2026-03-26T21:19:37Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
+depends_on: 0de4b13
 
 Stderr: execs/sec, total execs, unique findings, corpus size, splice rejection rate. --quiet/--verbose. Rate-limit ~1/sec.
