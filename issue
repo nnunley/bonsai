@@ -3,12 +3,12 @@ title: Parse/reparse utilities
 status: blocked
 priority: medium
 created: 2026-03-26T21:19:24Z
-updated: 2026-03-26T21:31:17Z
+updated: 2026-03-26T21:31:18Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: e2ce96a
 blocks: d2e5eaa
-relates_to: d2e5eaa,390cbf0
+relates_to: 390cbf0
 
 Implement parse(source, language) -> Tree and reparse(tree, source, edit) -> Tree using tree-sitter incremental parsing
