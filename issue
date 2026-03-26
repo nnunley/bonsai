@@ -3,10 +3,11 @@ title: Fuzzer integration tests
 status: blocked
 priority: medium
 created: 2026-03-26T21:19:25Z
-updated: 2026-03-26T21:19:38Z
+updated: 2026-03-26T21:19:39Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: dc09fa8,c115368,8139928
+blocks: b91a452
 
 E2E: fuzz buggy Python processor, verify dedup, auto-reduction, persistence, diversity-guided, --max-execs. Deterministic (fixed PRNG, --jobs 1).
