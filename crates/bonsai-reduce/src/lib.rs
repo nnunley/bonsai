@@ -2,6 +2,7 @@
 
 pub mod cache;
 pub mod interest;
+pub mod queue;
 
 pub use cache::TestCache;
 pub use interest::{InterestingnessTest, ShellTest};
