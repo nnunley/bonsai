@@ -8,5 +8,6 @@ author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: e298d28
+blocks: 0fc96df
 
 Stderr: current size, percentage reduction, iteration count, cache hit rate. --quiet/--verbose. Rate-limit ~1/sec.
