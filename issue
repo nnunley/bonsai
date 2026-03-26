@@ -8,6 +8,5 @@ author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 blocks: 51dd5ab
-parent_of: e2ce96a
 
 Create root Cargo.toml with workspace members: bonsai-core, bonsai-reduce, bonsai-fuzz, bonsai-cli. Set up workspace dependency inheritance.
