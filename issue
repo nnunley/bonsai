@@ -1,9 +1,9 @@
 id: 6221036
 title: Type-compatible AST splicing with positional preference
-status: open
+status: blocked
 priority: medium
 created: 2026-03-26T21:19:25Z
-updated: 2026-03-26T21:19:35Z
+updated: 2026-03-26T21:19:36Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
