@@ -3,9 +3,10 @@ title: Transform trait and Replacement type
 status: open
 priority: medium
 created: 2026-03-26T21:19:24Z
-updated: 2026-03-26T21:19:24Z
+updated: 2026-03-26T21:19:28Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
+depends_on: 7fcb05d
 
 Define Replacement struct (start_byte, end_byte, new_bytes). Define Transform trait with candidates(node, source, tree, provider) -> Vec<Replacement>.
