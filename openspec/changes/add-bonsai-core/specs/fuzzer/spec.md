@@ -23,6 +23,14 @@ The system SHALL generate new test inputs by parsing corpus files and splicing t
 - **WHEN** a splice is performed
 - **THEN** the result is reparsed and only kept if it contains no ERROR or MISSING nodes
 
+#### Scenario: Scope-aware splicing
+- **WHEN** locals.scm is available for the grammar
+- **THEN** the fuzzer can identify free variables in a spliced subtree and either skip incompatible splices or rename references to match the target scope, improving splice acceptance rate
+
+#### Scenario: Scope-unaware splicing fallback
+- **WHEN** no locals.scm is available
+- **THEN** splicing relies on syntactic compatibility only (positional + supertype matching)
+
 ### Requirement: Fuzz Target Interface
 The system SHALL support passing generated inputs to a target program via stdin, temp file, or argument replacement (@@). Commands SHALL be invoked via std::process::Command, not shell interpolation. FuzzTarget SHALL implement InterestingnessTest directly (no separate type bridge needed).
 

@@ -56,6 +56,36 @@ The system SHALL provide a trait-based transform system that proposes candidate 
 - **WHEN** a node has a child with a compatible grammar symbol
 - **THEN** the Unwrap transform proposes replacing the node with that child
 
+### Requirement: Scope Analysis via locals.scm
+The system SHALL support loading tree-sitter locals.scm query files to analyze scope, definitions, and references. When available, this enables scope-aware transforms and smarter fuzzer splicing.
+
+#### Scenario: Load locals.scm
+- **WHEN** a grammar has a locals field in grammars.toml pointing to a valid locals.scm file
+- **THEN** the system builds a ScopeAnalysis mapping definitions to their references within scope boundaries
+
+#### Scenario: No locals.scm available
+- **WHEN** a grammar has no locals field in grammars.toml
+- **THEN** scope-aware transforms are skipped and the system falls back to syntactic-only transforms
+
+#### Scenario: Resolve identifier references
+- **WHEN** a locals.scm is loaded and an identifier node is encountered
+- **THEN** the system can determine whether it is a definition or a reference, and which definition a reference points to
+
+### Requirement: Scope-Aware Transforms
+The system SHALL provide transforms that use ScopeAnalysis to perform semantics-preserving reductions when locals.scm is available.
+
+#### Scenario: Unify identifiers
+- **WHEN** locals.scm is available and multiple identifiers exist
+- **THEN** the Unify Identifiers transform renames each binding and all its references to a canonical short form (a, b, c, ...) preserving scope consistency
+
+#### Scenario: Dead definition removal
+- **WHEN** locals.scm is available and a definition has no references within its scope
+- **THEN** the Dead Definition Removal transform proposes deleting the entire definition statement
+
+#### Scenario: Scope-aware transforms skipped without locals.scm
+- **WHEN** no locals.scm is available for the grammar
+- **THEN** scope-aware transforms produce no candidates (graceful fallback)
+
 ### Requirement: Syntactic Validity Checking
 The system SHALL verify all candidate replacements by reparsing and checking for ERROR and MISSING nodes. Lookahead iterator MAY be used as a best-effort pre-filter but is NOT the definitive gate.
 

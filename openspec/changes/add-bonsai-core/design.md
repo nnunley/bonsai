@@ -79,10 +79,48 @@ Built-in transforms (Phase 1):
 - **Delete**: Replace node with empty string (if grammar allows)
 - **Unwrap**: Replace node with one of its children of compatible type
 
+Scope-aware transforms (Phase 1b — uses `locals.scm`):
+- **Unify identifiers**: Rename all identifiers to canonical short forms (`a`, `b`, `c`, ...) while preserving scope consistency. Uses `locals.scm` queries (`@local.scope`, `@local.definition`, `@local.reference`) to find all definitions and their references, then renames each binding and its references consistently. This is a semantics-preserving transform — the reduced code still has the same binding structure.
+- **Dead definition removal**: If a `@local.definition` has no `@local.reference` within its scope, the entire definition statement can be deleted. Stronger than plain Delete because it knows the definition is unused.
+
 Future transforms (Phase 2 — Vulcan):
 - **Hoist**: Replace node with a compatible descendant (not just direct child)
-- **Unify identifiers**: Rename identifiers to canonical forms
 - **Quantified node reduction**: Reduce lists (e.g., remove items from argument lists)
+
+### Scope Analysis via locals.scm
+
+Tree-sitter grammars can ship a `locals.scm` query file that defines scope, definition, and reference relationships. This gives bonsai scope-aware analysis without a full type system.
+
+```
+; Example locals.scm (JavaScript):
+(statement_block) @local.scope
+(function_declaration) @local.scope
+(pattern/identifier) @local.definition
+(variable_declarator name: (identifier) @local.definition)
+(identifier) @local.reference
+```
+
+Bonsai loads `locals.scm` at startup (path configured in `grammars.toml`) and uses tree-sitter's query API to:
+1. **Map scopes**: identify which nodes create new scopes
+2. **Map definitions**: identify identifier definitions and their scope
+3. **Map references**: identify which references point to which definitions (by name within scope)
+
+This is exposed via a `ScopeAnalysis` struct:
+
+```rust
+pub struct ScopeAnalysis {
+    /// definition_node_id → (name, scope_node_id)
+    definitions: HashMap<usize, (String, usize)>,
+    /// reference_node_id → definition_node_id (resolved)
+    references: HashMap<usize, usize>,
+    /// scope_node_id → list of definition_node_ids
+    scopes: HashMap<usize, Vec<usize>>,
+}
+```
+
+When `locals.scm` is not available for a grammar, scope-aware transforms are simply skipped (the same fallback pattern as SupertypeProvider).
+
+The fuzzer also benefits: when splicing a subtree from one file into another, `ScopeAnalysis` can identify which free variables the subtree expects, and either skip incompatible splices or rename references to match the target scope.
 
 ### Tree Reconstruction
 

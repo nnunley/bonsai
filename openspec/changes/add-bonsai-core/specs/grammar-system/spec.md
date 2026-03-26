@@ -8,7 +8,7 @@ The system SHALL support tree-sitter grammars as git submodules in a grammars/ d
 - **THEN** it can be registered in grammars.toml and compiled at build time
 
 ### Requirement: Grammar Registry
-The system SHALL maintain a grammars.toml file mapping language names to grammar paths, file extensions, source directories, and optional supertype query files.
+The system SHALL maintain a grammars.toml file mapping language names to grammar paths, file extensions, source directories, optional supertype query files, and optional locals query files for scope analysis.
 
 #### Scenario: Lookup by language name
 - **WHEN** a language name is provided (e.g., "python")
@@ -25,6 +25,14 @@ The system SHALL maintain a grammars.toml file mapping language names to grammar
 #### Scenario: Supertype query file
 - **WHEN** a grammar entry in grammars.toml specifies a supertypes field
 - **THEN** the QueryFileProvider loads it for compatibility checking
+
+#### Scenario: Locals query file
+- **WHEN** a grammar entry in grammars.toml specifies a locals field
+- **THEN** the ScopeAnalysis module loads it for scope-aware transforms (identifier unification, dead definition removal)
+
+#### Scenario: Missing locals file
+- **WHEN** a grammar entry does not specify a locals field
+- **THEN** scope-aware transforms are skipped for that language
 
 ### Requirement: Build-Time Grammar Compilation
 The system SHALL compile tree-sitter grammar C/C++ sources at build time via build.rs in bonsai-core, including external scanners, and generate a Rust module for language lookup.
