@@ -3,9 +3,10 @@ title: Reducer integration tests
 status: open
 priority: medium
 created: 2026-03-26T21:19:25Z
-updated: 2026-03-26T21:19:25Z
+updated: 2026-03-26T21:19:33Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
+depends_on: 666dcc1
 
 E2E with Python/JS grammars. Verify reduced output validity (no new ERROR/MISSING). Verify caching reduces test invocations. Test grammar with no supertypes.
