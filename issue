@@ -1,0 +1,11 @@
+id: 5b4ac88
+title: End-to-end CLI tests
+status: open
+priority: medium
+created: 2026-03-26T21:19:26Z
+updated: 2026-03-26T21:19:26Z
+author: Norman Nunley, Jr
+assignee: Norman Nunley, Jr
+hash_source: content
+
+assert_cmd: reduce/fuzz with various languages, error cases, flag combinations, SIGINT handling. Clean up temp files.
