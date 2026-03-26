@@ -9,6 +9,6 @@ assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: 0fc96df,b7b3782
 blocks: 9361f71,6b77687,acbcc50
-parent_of: 9361f71,6b77687
+parent_of: 9361f71,6b77687,acbcc50
 
 clap derive: Reduce, Fuzz, Languages subcommands. All flags per spec. Help text with examples.
