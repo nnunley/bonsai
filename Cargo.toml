@@ -24,3 +24,5 @@ regex = "1"
 bonsai-core = { path = "crates/bonsai-core" }
 bonsai-reduce = { path = "crates/bonsai-reduce" }
 bonsai-fuzz = { path = "crates/bonsai-fuzz" }
+wait-timeout = "0.2"
+libc = "0.2"

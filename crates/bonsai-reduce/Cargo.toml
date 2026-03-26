@@ -10,3 +10,5 @@ xxhash-rust = { workspace = true }
 tempfile = { workspace = true }
 rayon = { workspace = true }
 thiserror = { workspace = true }
+wait-timeout = { workspace = true }
+libc = { workspace = true }
