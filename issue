@@ -3,9 +3,10 @@ title: Reducer progress reporting
 status: open
 priority: medium
 created: 2026-03-26T21:19:25Z
-updated: 2026-03-26T21:19:25Z
+updated: 2026-03-26T21:19:33Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
+depends_on: e298d28
 
 Stderr: current size, percentage reduction, iteration count, cache hit rate. --quiet/--verbose. Rate-limit ~1/sec.
