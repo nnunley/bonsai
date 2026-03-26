@@ -2,6 +2,7 @@
 
 pub mod cache;
 pub mod interest;
+pub mod progress;
 pub mod queue;
 pub mod reducer;
 
