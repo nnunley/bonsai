@@ -4,6 +4,7 @@ pub mod compat;
 pub mod parse;
 pub mod supertype;
 pub mod transform;
+pub mod transforms;
 pub mod validity;
 
 pub mod languages {
