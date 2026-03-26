@@ -1,0 +1,14 @@
+[package]
+name = "bonsai-fuzz"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bonsai-core = { workspace = true }
+bonsai-reduce = { workspace = true }
+xxhash-rust = { workspace = true }
+regex = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+tempfile = { workspace = true }

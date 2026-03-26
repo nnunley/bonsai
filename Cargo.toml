@@ -1,0 +1,26 @@
+[workspace]
+members = [
+    "crates/bonsai-core",
+    "crates/bonsai-reduce",
+    "crates/bonsai-fuzz",
+    "crates/bonsai-cli",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[workspace.dependencies]
+tree-sitter = "0.25"
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
+tempfile = "3"
+rayon = "1"
+regex = "1"
+bonsai-core = { path = "crates/bonsai-core" }
+bonsai-reduce = { path = "crates/bonsai-reduce" }
+bonsai-fuzz = { path = "crates/bonsai-fuzz" }

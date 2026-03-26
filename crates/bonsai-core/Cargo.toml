@@ -1,0 +1,10 @@
+[package]
+name = "bonsai-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+tree-sitter = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }

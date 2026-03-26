@@ -1,0 +1,15 @@
+[package]
+name = "bonsai-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "bonsai"
+path = "src/main.rs"
+
+[dependencies]
+bonsai-core = { workspace = true }
+bonsai-reduce = { workspace = true }
+bonsai-fuzz = { workspace = true }
+clap = { workspace = true }
