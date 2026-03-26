@@ -3,10 +3,11 @@ title: Delete transform
 status: blocked
 priority: medium
 created: 2026-03-26T21:19:24Z
-updated: 2026-03-26T21:19:28Z
+updated: 2026-03-26T21:19:29Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: bb30cdb
+blocks: 390cbf0
 
 Implement DeleteTransform that proposes empty-string replacement for named nodes. Validity determined by caller via reparse.
