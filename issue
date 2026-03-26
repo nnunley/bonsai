@@ -1,6 +1,6 @@
 id: e2ce96a
 title: Implement build.rs in bonsai-core
-status: open
+status: blocked
 priority: medium
 created: 2026-03-26T21:19:24Z
 updated: 2026-03-26T21:19:27Z
