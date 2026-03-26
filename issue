@@ -7,6 +7,6 @@ updated: 2026-03-26T21:19:33Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
-depends_on: 666dcc1
+depends_on: 666dcc1,99a2c5e
 
 E2E with Python/JS grammars. Verify reduced output validity (no new ERROR/MISSING). Verify caching reduces test invocations. Test grammar with no supertypes.
