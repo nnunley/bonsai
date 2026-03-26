@@ -3,10 +3,10 @@ title: Fuzzer
 status: open
 priority: medium
 created: 2026-03-26T21:31:32Z
-updated: 2026-03-26T21:31:49Z
+updated: 2026-03-26T21:31:50Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
-parent_of: 21866db,6221036,692fd36,bdda75f,fb5dd76,dc09fa8,c115368,0de4b13
+parent_of: 21866db,6221036,692fd36,bdda75f,fb5dd76,dc09fa8,c115368,0de4b13,8139928
 
 bonsai-fuzz: corpus-based AST splicing, dedup, persistence, auto-reduction
