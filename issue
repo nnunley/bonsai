@@ -3,11 +3,12 @@ title: Perses-style reduction loop with parallel testing
 status: blocked
 priority: medium
 created: 2026-03-26T21:19:25Z
-updated: 2026-03-26T21:25:47Z
+updated: 2026-03-26T21:25:50Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: 7f421e1,2289c83,75fc6ff
 blocks: 666dcc1,99a2c5e,0de4b13
+relates_to: 7f421e1
 
 Main loop: pop entry, look up node by byte_range, generate candidates, validate, test in parallel (--jobs). Queue rebuild after acceptance. --max-tests, --max-time termination. Deterministic with --jobs 1.
