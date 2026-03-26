@@ -8,5 +8,6 @@ author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: e2ce96a
+blocks: bdda75f
 
 InputMode: Stdin (default), TempFile, ArgReplace(@@). Auto-detect from command. impl InterestingnessTest for FuzzTarget. Command::new, no shell interpolation.
