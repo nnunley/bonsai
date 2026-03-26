@@ -1,0 +1,11 @@
+id: dc09fa8
+title: Grammar-diversity-guided corpus evolution
+status: open
+priority: medium
+created: 2026-03-26T21:19:25Z
+updated: 2026-03-26T21:19:25Z
+author: Norman Nunley, Jr
+assignee: Norman Nunley, Jr
+hash_source: content
+
+Track (parent_kind, child_kind) bigrams. --diversity-guided adds inputs with novel bigrams to corpus. Incremental pool update.
