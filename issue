@@ -3,9 +3,10 @@ title: CLI
 status: open
 priority: medium
 created: 2026-03-26T21:31:32Z
-updated: 2026-03-26T21:31:32Z
+updated: 2026-03-26T21:31:50Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
+parent_of: b91a452
 
 bonsai-cli: unified CLI with reduce, fuzz, languages subcommands
