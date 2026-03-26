@@ -170,6 +170,9 @@ pub fn try_replacement(
     language: &tree_sitter::Language,
     initial_errors: Option<&ErrorSet>,
 ) -> Option<Vec<u8>> {
+    if replacement.start_byte > replacement.end_byte || replacement.end_byte > source.len() {
+        return None;
+    }
     let new_source = apply_replacement(source, replacement);
     let tree = parse::parse(&new_source, language)?;
 
@@ -349,6 +352,20 @@ mod tests {
             result.is_none(),
             "Strict mode should reject when errors exist"
         );
+    }
+
+    #[test]
+    fn test_try_replacement_invalid_range() {
+        let lang = languages::get_language("python").unwrap();
+        let source = b"x = 1";
+
+        // end_byte > source.len()
+        let r = Replacement { start_byte: 0, end_byte: 100, new_bytes: vec![] };
+        assert!(try_replacement(source, &r, &lang, None).is_none());
+
+        // start_byte > end_byte
+        let r = Replacement { start_byte: 4, end_byte: 2, new_bytes: vec![] };
+        assert!(try_replacement(source, &r, &lang, None).is_none());
     }
 
     #[test]

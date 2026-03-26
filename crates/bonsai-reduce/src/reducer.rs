@@ -190,6 +190,15 @@ pub fn reduce(
         // No candidate worked -- entry is skipped, move to next
     }
 
+    // Final verification: re-run the interestingness test to catch any cache collision corruption
+    if !current_source.is_empty() && current_source != source {
+        if !test.is_interesting(&current_source) {
+            // Cache collision corrupted the result — fall back to original
+            current_source = source.to_vec();
+            reductions = 0;
+        }
+    }
+
     ReducerResult {
         source: current_source,
         tests_run,
@@ -383,6 +392,20 @@ mod tests {
 
         let result = reduce(source, &test, config);
         assert_eq!(result.source, b"");
+    }
+
+    #[test]
+    fn test_reduce_final_output_is_verified() {
+        // This test ensures the final result actually passes the interestingness test
+        let lang = bonsai_core::languages::get_language("python").unwrap();
+        let source = b"x = 1\ny = 2";
+        let test = ContainsTest::new(b"x = 1");
+        let config = make_config(lang, true);
+        let result = reduce(source, &test, config);
+
+        // The final result must pass the test
+        assert!(test.is_interesting(&result.source),
+            "Final output must pass the interestingness test");
     }
 
     #[test]

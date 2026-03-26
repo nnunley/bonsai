@@ -4,8 +4,9 @@ use xxhash_rust::xxh3::xxh3_64;
 /// Caches interestingness test results to avoid redundant test executions.
 /// Uses xxhash-64 of source bytes as the key.
 ///
-/// Note: 64-bit hash collisions are tolerable here — a collision means
-/// one extra or one skipped test, not a correctness issue.
+/// Uses 64-bit hashes. Collisions are extremely rare (~1/2^64 per lookup)
+/// but can cause incorrect cache hits. The reducer re-verifies its final
+/// output to catch any corruption from collisions.
 pub struct TestCache {
     results: HashMap<u64, bool>,
     hits: u64,
