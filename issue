@@ -3,10 +3,11 @@ title: Test result caching
 status: blocked
 priority: medium
 created: 2026-03-26T21:19:24Z
-updated: 2026-03-26T21:19:31Z
+updated: 2026-03-26T21:19:32Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: 2289c83
+blocks: e298d28
 
 HashMap<u64, bool> keyed by xxhash-64. Integrate into reduction loop. 64-bit collisions tolerable for cache.
