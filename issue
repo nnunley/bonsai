@@ -1,0 +1,11 @@
+id: 6b77687
+title: bonsai fuzz command
+status: open
+priority: medium
+created: 2026-03-26T21:19:26Z
+updated: 2026-03-26T21:19:26Z
+author: Norman Nunley, Jr
+assignee: Norman Nunley, Jr
+hash_source: content
+
+Wire clap args to bonsai_fuzz: parse corpus, create FuzzTarget, configure options, run fuzzing loop. SIGINT handler for graceful shutdown.
