@@ -3,9 +3,10 @@ title: Interest criteria with signal support
 status: open
 priority: medium
 created: 2026-03-26T21:19:25Z
-updated: 2026-03-26T21:19:25Z
+updated: 2026-03-26T21:19:34Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
+depends_on: 692fd36
 
 InterestCriteria: ExitCode(Option<i32>), Signal, Stderr(Regex), Timeout(Duration). Combinable. ExitStatus::signal() on Unix. Process group kill. cfg(unix).
