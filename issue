@@ -1,9 +1,9 @@
 id: 692fd36
 title: FuzzTarget with input modes and InterestingnessTest impl
-status: blocked
+status: open
 priority: medium
 created: 2026-03-26T21:19:25Z
-updated: 2026-03-26T21:19:34Z
+updated: 2026-03-26T21:50:07Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
