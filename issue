@@ -7,6 +7,6 @@ updated: 2026-03-26T21:19:30Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
-depends_on: 80478b5
+depends_on: 80478b5,9697fda
 
 Coverage gap review. Edge cases: empty source, single-token, deeply nested trees. Test grammar with zero supertypes. Test multiple grammars (Python, JS, Rust).
