@@ -3,10 +3,11 @@ title: bonsai languages command
 status: blocked
 priority: medium
 created: 2026-03-26T21:19:26Z
-updated: 2026-03-26T21:19:40Z
+updated: 2026-03-26T21:19:41Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: b91a452
+blocks: 5b4ac88
 
 Call list_languages() from generated registry module. Sort alphabetically, align columns.
