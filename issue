@@ -8,5 +8,6 @@ author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: fb5dd76,e298d28
+blocks: 8139928
 
 On finding: invoke reducer with same FuzzTarget as InterestingnessTest. Timeout: min(60s, 10x target timeout). Save reduced version or best-so-far.
