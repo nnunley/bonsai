@@ -1,9 +1,9 @@
 id: 7f421e1
 title: Priority queue with byte-range storage
-status: blocked
+status: open
 priority: medium
 created: 2026-03-26T21:19:25Z
-updated: 2026-03-26T21:19:31Z
+updated: 2026-03-26T22:08:15Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
