@@ -9,6 +9,6 @@ assignee: Norman Nunley, Jr
 hash_source: content
 parent_of: 7f421e1,e298d28,2289c83,75fc6ff,666dcc1,99a2c5e,0fc96df
 depends_on: d380a49
-blocks: 535413c
+blocks: 535413c,5c926db
 
 bonsai-reduce: Perses-style priority queue reduction with parallel testing
