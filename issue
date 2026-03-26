@@ -3,11 +3,11 @@ title: Node type compatibility checking
 status: blocked
 priority: medium
 created: 2026-03-26T21:19:24Z
-updated: 2026-03-26T21:19:28Z
+updated: 2026-03-26T21:19:35Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: 38ad80b
-blocks: bb30cdb
+blocks: bb30cdb,21866db
 
 Implement compatible_replacements(node, provider) -> Vec<u16> using SupertypeProvider subtype info. Handle named vs anonymous nodes.
