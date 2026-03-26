@@ -1,3 +1,5 @@
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tree_sitter::Language;
 
@@ -28,6 +30,9 @@ pub struct ReducerConfig {
     pub jobs: usize,
     /// If true, reject any ERROR/MISSING nodes. If false, only reject NEW errors.
     pub strict: bool,
+    /// Interrupt flag: when set to true, the reduction loop will stop at the next
+    /// opportunity. Typically set by a SIGINT handler in the CLI.
+    pub interrupted: Arc<AtomicBool>,
 }
 
 /// Result of a reduction run.
@@ -91,6 +96,9 @@ pub fn reduce(
     // Main reduction loop
     loop {
         // Check termination bounds
+        if config.interrupted.load(Ordering::Relaxed) {
+            break;
+        }
         if config.max_tests > 0 && tests_run >= config.max_tests {
             break;
         }
@@ -126,6 +134,9 @@ pub fn reduce(
         let mut accepted = false;
         for candidate in &candidates {
             // Check termination
+            if config.interrupted.load(Ordering::Relaxed) {
+                break;
+            }
             if config.max_tests > 0 && tests_run >= config.max_tests {
                 break;
             }
@@ -230,7 +241,7 @@ mod tests {
     use bonsai_core::supertype::LanguageApiProvider;
     use bonsai_core::transforms::delete::DeleteTransform;
     use bonsai_core::transforms::unwrap::UnwrapTransform;
-    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
     use std::sync::Arc;
 
     /// Test that checks if a specific string is present in the input.
@@ -276,6 +287,7 @@ mod tests {
             max_time: Duration::ZERO,
             jobs: 1,
             strict,
+            interrupted: Arc::new(AtomicBool::new(false)),
         }
     }
 
@@ -371,5 +383,19 @@ mod tests {
 
         let result = reduce(source, &test, config);
         assert_eq!(result.source, b"");
+    }
+
+    #[test]
+    fn test_reduce_respects_interrupt() {
+        // Set the interrupt flag before starting
+        let lang = bonsai_core::languages::get_language("python").unwrap();
+        let source = b"x = 1\ny = 2\nz = 3";
+        let test = ContainsTest::new(b"x = 1");
+        let config = make_config(lang, true);
+        config.interrupted.store(true, Ordering::Relaxed);
+
+        let result = reduce(source, &test, config);
+        // Should stop immediately without running tests
+        assert_eq!(result.tests_run, 0);
     }
 }
