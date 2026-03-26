@@ -8,5 +8,6 @@ author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: 390cbf0,38ad80b,7fcb05d
+blocks: 6221036
 
 CorpusIndex: parse all files in directory. NodePool: HashMap<(parent_kind, field_id, grammar_symbol), Vec<NodeFragment>> + flat fallback.
