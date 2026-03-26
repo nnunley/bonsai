@@ -3,12 +3,12 @@ title: Clap setup with subcommands
 status: blocked
 priority: medium
 created: 2026-03-26T21:19:26Z
-updated: 2026-03-26T21:31:19Z
+updated: 2026-03-26T21:31:20Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: 0fc96df,b7b3782
 blocks: 9361f71,6b77687,acbcc50
-relates_to: 6b77687,acbcc50,5b4ac88
+relates_to: acbcc50,5b4ac88
 
 clap derive: Reduce, Fuzz, Languages subcommands. All flags per spec. Help text with examples.
