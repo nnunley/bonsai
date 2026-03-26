@@ -8,5 +8,6 @@ author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: 38ad80b
+blocks: bb30cdb
 
 Implement compatible_replacements(node, provider) -> Vec<u16> using SupertypeProvider subtype info. Handle named vs anonymous nodes.
