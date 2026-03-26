@@ -3,11 +3,12 @@ title: Reducer
 status: blocked
 priority: medium
 created: 2026-03-26T21:31:32Z
-updated: 2026-03-26T21:31:59Z
+updated: 2026-03-26T21:32:00Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 parent_of: 7f421e1,e298d28,2289c83,75fc6ff,666dcc1,99a2c5e,0fc96df
 depends_on: d380a49
+blocks: 535413c
 
 bonsai-reduce: Perses-style priority queue reduction with parallel testing
