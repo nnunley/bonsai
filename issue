@@ -3,10 +3,11 @@ title: Session persistence with full PRNG state
 status: blocked
 priority: medium
 created: 2026-03-26T21:19:25Z
-updated: 2026-03-26T21:19:36Z
+updated: 2026-03-26T21:19:38Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: fb5dd76
+blocks: b7b3782
 
 Serialize: corpus index, node pool cache, findings hashes, stats, full ChaCha8Rng state. serde + bincode. Version header + checksum. Corrupted/incompatible → warning + fresh start.
