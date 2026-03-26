@@ -3,11 +3,11 @@ title: InterestingnessTest trait and ShellTest
 status: blocked
 priority: medium
 created: 2026-03-26T21:19:24Z
-updated: 2026-03-26T21:19:31Z
+updated: 2026-03-26T21:19:32Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: e2ce96a
-blocks: 75fc6ff
+blocks: 75fc6ff,e298d28
 
 Define InterestingnessTest trait (Send + Sync). ShellTest: temp file via tempfile::NamedTempFile, Command::new (no shell interpolation), configurable timeout with process group kill.
