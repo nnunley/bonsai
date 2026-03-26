@@ -8,5 +8,6 @@ author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: 7fcb05d
+blocks: 80478b5
 
 Define Replacement struct (start_byte, end_byte, new_bytes). Define Transform trait with candidates(node, source, tree, provider) -> Vec<Replacement>.
