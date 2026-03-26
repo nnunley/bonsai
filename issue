@@ -3,10 +3,11 @@ title: Initialize Cargo workspace
 status: open
 priority: medium
 created: 2026-03-26T21:19:24Z
-updated: 2026-03-26T21:19:26Z
+updated: 2026-03-26T21:19:41Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 blocks: 51dd5ab
+parent_of: 51dd5ab
 
 Create root Cargo.toml with workspace members: bonsai-core, bonsai-reduce, bonsai-fuzz, bonsai-cli. Set up workspace dependency inheritance.
