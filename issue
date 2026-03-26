@@ -3,11 +3,12 @@ title: Type-compatible AST splicing with positional preference
 status: blocked
 priority: medium
 created: 2026-03-26T21:19:25Z
-updated: 2026-03-26T21:19:36Z
+updated: 2026-03-26T21:19:43Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: 21866db
 blocks: fb5dd76
+parent_of: 21866db
 
 splice(): pick random node, positional match first, type fallback via SupertypeProvider. Reparse + ERROR/MISSING check. Configurable mutation count (default uniform [1,3]).
