@@ -12,23 +12,23 @@ The system SHALL parse source files into tree-sitter concrete syntax trees and s
 - **THEN** the system re-parses incrementally and returns an updated tree
 
 ### Requirement: SupertypeProvider Trait
-The system SHALL provide a pluggable trait for determining node type compatibility, with three built-in providers: LanguageApiProvider (tree-sitter's runtime API), QueryFileProvider (supertypes.scm files), and a ChainProvider that composes them in order.
+The system SHALL provide a pluggable trait for determining node type compatibility, with built-in providers: LanguageApiProvider (tree-sitter's runtime API), NodeTypesProvider (build-time node-types.json parsing), and a ChainProvider that composes them.
 
 #### Scenario: Language API supertypes available
 - **WHEN** a grammar defines supertypes via the tree-sitter Language API
 - **THEN** LanguageApiProvider returns subtype lists for each supertype
 
-#### Scenario: Query file supertypes
-- **WHEN** a grammar has no built-in supertypes but ships a supertypes.scm file
-- **THEN** QueryFileProvider loads the file and provides compatibility mappings
+#### Scenario: node-types.json supertypes (build-time)
+- **WHEN** a grammar ships node-types.json with types that have subtypes arrays
+- **THEN** NodeTypesProvider provides supertype/subtype mappings generated at build time
 
-#### Scenario: No supertypes available
-- **WHEN** neither the Language API nor a query file provides supertypes
+#### Scenario: Fallback
+- **WHEN** neither provider returns supertypes (should be rare since node-types.json is standard)
 - **THEN** the system falls back to Delete and Unwrap transforms only, and logs a warning
 
 #### Scenario: Chain provider composition
 - **WHEN** multiple providers are available
-- **THEN** ChainProvider tries them in order and merges results
+- **THEN** ChainProvider tries them in order (LanguageApiProvider → NodeTypesProvider) and merges results
 
 ### Requirement: Node Type Compatibility
 The system SHALL determine which nodes can legally replace a given node using the SupertypeProvider and reparse validation as the definitive gate.

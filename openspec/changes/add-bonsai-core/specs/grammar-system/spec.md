@@ -8,7 +8,7 @@ The system SHALL support tree-sitter grammars as git submodules in a grammars/ d
 - **THEN** it can be registered in grammars.toml and compiled at build time
 
 ### Requirement: Grammar Registry
-The system SHALL maintain a grammars.toml file mapping language names to grammar paths, file extensions, source directories, optional supertype query files, and optional locals query files for scope analysis.
+The system SHALL maintain a grammars.toml file mapping language names to grammar paths, file extensions, source directories, and optional locals query files for scope analysis. Supertypes are extracted automatically from node-types.json at build time.
 
 #### Scenario: Lookup by language name
 - **WHEN** a language name is provided (e.g., "python")
@@ -22,9 +22,9 @@ The system SHALL maintain a grammars.toml file mapping language names to grammar
 - **WHEN** an unrecognized language name or file extension is provided
 - **THEN** the system returns an error listing supported languages
 
-#### Scenario: Supertype query file
-- **WHEN** a grammar entry in grammars.toml specifies a supertypes field
-- **THEN** the QueryFileProvider loads it for compatibility checking
+#### Scenario: Automatic supertype extraction
+- **WHEN** a grammar's src/ directory contains node-types.json
+- **THEN** the build system extracts supertype/subtype relationships and generates a NodeTypesProvider
 
 #### Scenario: Locals query file
 - **WHEN** a grammar entry in grammars.toml specifies a locals field

@@ -13,8 +13,8 @@ bonsai/
 │   └── bonsai-cli/         # unified CLI (bonsai reduce / bonsai fuzz)
 ├── grammars/               # vendored tree-sitter grammars (git submodules)
 │   ├── tree-sitter-python/
-│   │   └── queries/
-│   │       └── supertypes.scm  # optional supertype annotations
+│   │   └── src/
+│   │       └── node-types.json  # supertypes extracted automatically at build time
 │   └── ...
 └── tests/                  # integration tests with real grammars
 ```
@@ -40,9 +40,9 @@ Three built-in providers, tried in order via `ChainProvider`:
 
 1. **`LanguageApiProvider`** — wraps `Language::supertypes()` / `subtypes_for_supertype()`. Best quality: grammar author-defined. Available for well-maintained grammars (Python, JavaScript, Rust, etc.). Many grammars return empty — this is expected.
 
-2. **`QueryFileProvider`** — loads a `supertypes.scm` file (tree-sitter query syntax) that annotates nodes with compatibility groups. Follows the ecosystem pattern of `highlights.scm`, `tags.scm`, etc. Shipped per-grammar in `grammars/<lang>/queries/supertypes.scm`. Users and community can contribute these for grammars lacking built-in supertypes.
+2. **`NodeTypesProvider`** — parses each grammar's `node-types.json` at build time to extract supertype/subtype relationships. Every tree-sitter grammar ships this file, so this provider works for all grammars automatically. Type names are resolved to kind IDs at runtime via `Language::id_for_node_kind()`. This is the primary fallback when the runtime API returns empty (older grammar ABI versions).
 
-3. **Fallback (no provider)** — when no supertype information is available, the system still works via Delete (remove optional nodes) and Unwrap (replace with compatible children). Reduction quality degrades to treereduce-level but the system remains functional. A warning is logged: "Grammar 'X' has no supertype annotations — reduction quality may be limited."
+3. **Fallback (no provider)** — when neither provider returns supertype information (should be rare since `node-types.json` is standard), the system still works via Delete and Unwrap transforms only. A warning is logged.
 
 **Lookahead iterator — best-effort optimization hint (NOT an oracle):**
 

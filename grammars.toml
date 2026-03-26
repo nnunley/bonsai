@@ -3,16 +3,17 @@
 # The build system (crates/bonsai-core/build.rs) reads this file
 # to compile grammars and generate the language lookup module.
 #
+# Supertypes are extracted automatically from each grammar's node-types.json
+# at build time — no manual configuration needed.
+#
 # Optional fields:
-#   supertypes  — path to supertypes.scm for compatibility checking
-#   locals      — path to locals.scm for scope-aware transforms (identifier unification, dead def removal)
+#   locals — path to locals.scm for scope-aware transforms (identifier unification, dead def removal)
 
 [[language]]
 name = "python"
 grammar = "grammars/tree-sitter-python"
 extensions = ["py", "pyi"]
 src = "src"
-# supertypes = "queries/supertypes.scm"
 # locals = "queries/locals.scm"  # not shipped in this submodule; available from nvim-treesitter
 
 [[language]]
