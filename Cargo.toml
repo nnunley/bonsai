@@ -26,3 +26,5 @@ bonsai-reduce = { path = "crates/bonsai-reduce" }
 bonsai-fuzz = { path = "crates/bonsai-fuzz" }
 wait-timeout = "0.2"
 libc = "0.2"
+ctrlc = "3"
+shell-words = "1"

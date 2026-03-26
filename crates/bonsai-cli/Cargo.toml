@@ -11,5 +11,6 @@ path = "src/main.rs"
 [dependencies]
 bonsai-core = { workspace = true }
 bonsai-reduce = { workspace = true }
-bonsai-fuzz = { workspace = true }
 clap = { workspace = true }
+ctrlc = { workspace = true }
+shell-words = { workspace = true }
