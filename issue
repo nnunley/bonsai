@@ -9,6 +9,6 @@ assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: e2ce96a
 blocks: d2e5eaa
-parent_of: 38ad80b,7fcb05d,bb30cdb,d2e5eaa
+parent_of: 38ad80b,7fcb05d,bb30cdb,d2e5eaa,390cbf0
 
 Implement parse(source, language) -> Tree and reparse(tree, source, edit) -> Tree using tree-sitter incremental parsing
