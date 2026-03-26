@@ -1,0 +1,11 @@
+id: 80478b5
+title: Delete transform
+status: open
+priority: medium
+created: 2026-03-26T21:19:24Z
+updated: 2026-03-26T21:19:24Z
+author: Norman Nunley, Jr
+assignee: Norman Nunley, Jr
+hash_source: content
+
+Implement DeleteTransform that proposes empty-string replacement for named nodes. Validity determined by caller via reparse.
