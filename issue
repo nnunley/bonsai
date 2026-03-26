@@ -1,0 +1,11 @@
+id: 666dcc1
+title: Output handling and graceful shutdown
+status: open
+priority: medium
+created: 2026-03-26T21:19:25Z
+updated: 2026-03-26T21:19:25Z
+author: Norman Nunley, Jr
+assignee: Norman Nunley, Jr
+hash_source: content
+
+Stdout default, --output for file. SIGINT handler writes best-so-far before exit. Progress goes to stderr.
