@@ -1,5 +1,7 @@
 //! `bonsai-core` — tree manipulation, compatibility checks, and transforms.
 
+pub mod parse;
+
 pub mod languages {
     include!(concat!(env!("OUT_DIR"), "/languages.rs"));
 }
