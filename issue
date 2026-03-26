@@ -1,0 +1,11 @@
+id: 163cbab
+title: Parse/reparse utilities
+status: open
+priority: medium
+created: 2026-03-26T21:19:24Z
+updated: 2026-03-26T21:19:24Z
+author: Norman Nunley, Jr
+assignee: Norman Nunley, Jr
+hash_source: content
+
+Implement parse(source, language) -> Tree and reparse(tree, source, edit) -> Tree using tree-sitter incremental parsing
