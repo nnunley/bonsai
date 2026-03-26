@@ -8,5 +8,6 @@ author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: b91a452
+blocks: 5b4ac88
 
 Wire clap args to bonsai_fuzz: parse corpus, create FuzzTarget, configure options, run fuzzing loop. SIGINT handler for graceful shutdown.
