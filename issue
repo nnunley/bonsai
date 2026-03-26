@@ -3,10 +3,11 @@ title: Reducer integration tests
 status: blocked
 priority: medium
 created: 2026-03-26T21:19:25Z
-updated: 2026-03-26T21:19:34Z
+updated: 2026-03-26T21:19:39Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: 666dcc1,99a2c5e
+blocks: b91a452
 
 E2E with Python/JS grammars. Verify reduced output validity (no new ERROR/MISSING). Verify caching reduces test invocations. Test grammar with no supertypes.
