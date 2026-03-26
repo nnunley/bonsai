@@ -1,9 +1,9 @@
 id: 21866db
 title: Corpus parsing and positional node pool
-status: blocked
+status: open
 priority: medium
 created: 2026-03-26T21:19:25Z
-updated: 2026-03-26T21:19:35Z
+updated: 2026-03-26T22:08:15Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
