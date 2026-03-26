@@ -8,5 +8,6 @@ author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: 8d4870a
+blocks: 8954a85
 
 Add git submodules for tree-sitter-python, tree-sitter-javascript, tree-sitter-rust under grammars/
