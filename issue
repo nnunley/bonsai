@@ -7,6 +7,6 @@ updated: 2026-03-26T21:19:40Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
-depends_on: 9361f71
+depends_on: 9361f71,6b77687
 
 assert_cmd: reduce/fuzz with various languages, error cases, flag combinations, SIGINT handling. Clean up temp files.
