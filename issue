@@ -3,10 +3,11 @@ title: Tree reconstruction and validity checking
 status: blocked
 priority: medium
 created: 2026-03-26T21:19:24Z
-updated: 2026-03-26T21:19:29Z
+updated: 2026-03-26T21:19:30Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: 163cbab,38ad80b
+blocks: 390cbf0
 
 Implement apply_replacement(), validate_tree() (ERROR + MISSING nodes), collect_errors() for initial error tracking, is_valid_replacement() composition. Support --strict mode.
