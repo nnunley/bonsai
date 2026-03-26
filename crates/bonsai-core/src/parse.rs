@@ -2,6 +2,13 @@ use tree_sitter::{InputEdit, Language, Parser, Tree};
 
 /// Parse source code with the given tree-sitter language.
 /// Returns None if parsing fails.
+///
+/// ```
+/// let lang = bonsai_core::languages::get_language("python").unwrap();
+/// let tree = bonsai_core::parse::parse(b"def foo(): pass", &lang).unwrap();
+/// assert_eq!(tree.root_node().kind(), "module");
+/// assert!(!tree.root_node().has_error());
+/// ```
 pub fn parse(source: &[u8], language: &Language) -> Option<Tree> {
     let mut parser = Parser::new();
     parser.set_language(language).ok()?;
@@ -11,6 +18,25 @@ pub fn parse(source: &[u8], language: &Language) -> Option<Tree> {
 /// Reparse source code incrementally after an edit.
 /// The caller must provide the old tree and the edit that was applied.
 /// Returns None if parsing fails.
+///
+/// ```
+/// use tree_sitter::{InputEdit, Point};
+///
+/// let lang = bonsai_core::languages::get_language("python").unwrap();
+/// let mut tree = bonsai_core::parse::parse(b"x = 1", &lang).unwrap();
+///
+/// // Replace "1" with "42" (byte 4..5 becomes byte 4..6)
+/// let edit = InputEdit {
+///     start_byte: 4,
+///     old_end_byte: 5,
+///     new_end_byte: 6,
+///     start_position: Point { row: 0, column: 4 },
+///     old_end_position: Point { row: 0, column: 5 },
+///     new_end_position: Point { row: 0, column: 6 },
+/// };
+/// let new_tree = bonsai_core::parse::reparse(b"x = 42", &mut tree, &edit).unwrap();
+/// assert!(!new_tree.root_node().has_error());
+/// ```
 pub fn reparse(source: &[u8], old_tree: &mut Tree, edit: &InputEdit) -> Option<Tree> {
     old_tree.edit(edit);
     let mut parser = Parser::new();

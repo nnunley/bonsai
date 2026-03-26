@@ -12,6 +12,18 @@ pub struct Replacement {
 }
 
 /// Apply a replacement to source bytes, returning the new source.
+///
+/// ```
+/// use bonsai_core::validity::{Replacement, apply_replacement};
+///
+/// let source = b"hello world";
+/// let r = Replacement { start_byte: 5, end_byte: 11, new_bytes: b" rust".to_vec() };
+/// assert_eq!(apply_replacement(source, &r), b"hello rust");
+///
+/// // Deletion: replace with empty bytes
+/// let r = Replacement { start_byte: 5, end_byte: 11, new_bytes: vec![] };
+/// assert_eq!(apply_replacement(source, &r), b"hello");
+/// ```
 pub fn apply_replacement(source: &[u8], replacement: &Replacement) -> Vec<u8> {
     let mut result = Vec::with_capacity(
         source.len() - (replacement.end_byte - replacement.start_byte) + replacement.new_bytes.len(),
@@ -136,6 +148,22 @@ fn has_error_recursive(cursor: &mut tree_sitter::TreeCursor) -> bool {
 /// - If `initial_errors` is Some, only rejects NEW errors not in the initial set.
 ///
 /// Returns Some(new_source) if valid, None if invalid.
+///
+/// ```
+/// use bonsai_core::validity::{Replacement, try_replacement};
+///
+/// let lang = bonsai_core::languages::get_language("python").unwrap();
+/// let source = b"x = 1\ny = 2\nz = 3";
+///
+/// // Valid: delete "y = 2\n" — remaining code is still valid Python
+/// let r = Replacement { start_byte: 6, end_byte: 12, new_bytes: vec![] };
+/// assert!(try_replacement(source, &r, &lang, None).is_some());
+///
+/// // Invalid: delete the condition from "if True:" — produces a parse error
+/// let source2 = b"if True:\n  pass";
+/// let r = Replacement { start_byte: 3, end_byte: 7, new_bytes: vec![] };
+/// assert!(try_replacement(source2, &r, &lang, None).is_none());
+/// ```
 pub fn try_replacement(
     source: &[u8],
     replacement: &Replacement,
