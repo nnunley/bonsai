@@ -1,9 +1,9 @@
 id: 7fcb05d
 title: Node type compatibility checking
-status: blocked
+status: open
 priority: medium
 created: 2026-03-26T21:19:24Z
-updated: 2026-03-26T21:19:35Z
+updated: 2026-03-26T21:58:44Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
