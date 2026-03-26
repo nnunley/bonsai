@@ -3,11 +3,11 @@ title: Implement build.rs in bonsai-core
 status: blocked
 priority: medium
 created: 2026-03-26T21:19:24Z
-updated: 2026-03-26T21:19:27Z
+updated: 2026-03-26T21:19:30Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: 8954a85
-blocks: 163cbab,38ad80b
+blocks: 163cbab,38ad80b,2289c83
 
 Compile grammar C/C++ sources via cc crate including external scanners. Generate Rust module with get_language(), get_language_by_extension(), list_languages(). Set cargo:rerun-if-changed.
