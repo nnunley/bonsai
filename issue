@@ -1,0 +1,11 @@
+id: b186f73
+title: Remove unused dependencies
+status: open
+priority: medium
+created: 2026-03-27T02:56:27Z
+updated: 2026-03-27T02:56:27Z
+author: Norman Nunley, Jr
+assignee: Norman Nunley, Jr
+hash_source: content
+
+Remove thiserror/serde from bonsai-core deps, thiserror/libc from bonsai-reduce, bonsai-core/bonsai-reduce/xxhash-rust/serde/thiserror from bonsai-fuzz. Remove thiserror/libc from workspace deps.
