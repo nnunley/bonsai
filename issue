@@ -1,9 +1,9 @@
 id: 90c4aa7
 title: Remove unused is_interrupted from output.rs
-status: open
+status: in_progress
 priority: medium
 created: 2026-03-27T02:56:27Z
-updated: 2026-03-27T02:56:27Z
+updated: 2026-03-27T03:40:45Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
