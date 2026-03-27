@@ -7,6 +7,6 @@ updated: 2026-03-27T02:56:40Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
-parent_of: 4a5a19d
+parent_of: 4a5a19d,b05f5c5
 
 Umbrella epic for fix-architecture-cleanup openspec change. Covers: FuzzTarget timeout enforcement, TargetResult error type, unused dependency removal, supertypes_scm removal, visit_all dedup, compat.rs API cleanup, documentation fixes.
