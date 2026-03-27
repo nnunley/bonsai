@@ -1,0 +1,11 @@
+id: 4dd71d7
+title: Initial input validation
+status: open
+priority: medium
+created: 2026-03-27T02:56:26Z
+updated: 2026-03-27T02:56:26Z
+author: Norman Nunley, Jr
+assignee: Norman Nunley, Jr
+hash_source: content
+
+Add initial input check to reduce() using TestResult. Return early on NotInteresting (tests_run=1). Fatal error on Error.
