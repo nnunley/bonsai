@@ -15,7 +15,6 @@ struct LanguageEntry {
     grammar: String,
     extensions: Vec<String>,
     src: String,
-    supertypes: Option<String>,
 }
 
 fn main() {
@@ -101,7 +100,6 @@ fn generate_languages_rs(out_dir: &Path, languages: &[LanguageEntry]) {
     writeln!(code, "pub struct LanguageInfo {{").unwrap();
     writeln!(code, "    pub name: &'static str,").unwrap();
     writeln!(code, "    pub extensions: &'static [&'static str],").unwrap();
-    writeln!(code, "    pub supertypes_scm: Option<&'static str>,").unwrap();
     writeln!(code, "}}").unwrap();
     writeln!(code).unwrap();
 
@@ -161,14 +159,10 @@ fn generate_languages_rs(out_dir: &Path, languages: &[LanguageEntry]) {
             .map(|e| format!("\"{}\"", e))
             .collect::<Vec<_>>()
             .join(", ");
-        let supertypes = match &lang.supertypes {
-            Some(s) => format!("Some(\"{}\")", s),
-            None => "None".to_string(),
-        };
         writeln!(
             code,
-            "        LanguageInfo {{ name: \"{}\", extensions: &[{}], supertypes_scm: {} }},",
-            lang.name, exts, supertypes
+            "        LanguageInfo {{ name: \"{}\", extensions: &[{}] }},",
+            lang.name, exts
         )
         .unwrap();
     }
