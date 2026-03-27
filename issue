@@ -1,9 +1,9 @@
 id: 2580113
 title: Wire NodeTypesProvider into ChainProvider
-status: blocked
+status: open
 priority: medium
 created: 2026-03-27T13:13:48Z
-updated: 2026-03-27T13:13:56Z
+updated: 2026-03-27T13:16:34Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
