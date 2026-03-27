@@ -3,9 +3,10 @@ title: Implement NodeTypesProvider
 status: open
 priority: medium
 created: 2026-03-27T13:13:48Z
-updated: 2026-03-27T13:13:48Z
+updated: 2026-03-27T13:13:55Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
+depends_on: df9170c
 
 Wraps build-time-generated mappings. Resolves type names to kind IDs at construction. Implements SupertypeProvider trait.
