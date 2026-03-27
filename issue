@@ -1,0 +1,11 @@
+id: f7fa27d
+title: Error tolerance in reducer loop
+status: open
+priority: medium
+created: 2026-03-27T02:56:25Z
+updated: 2026-03-27T02:56:25Z
+author: Norman Nunley, Jr
+assignee: Norman Nunley, Jr
+hash_source: content
+
+Add max_test_errors: usize to ReducerConfig (consecutive errors before abort, default 3). Expose --max-test-errors in CLI. Implement counter reset/increment logic in reducer loop.
