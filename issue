@@ -3,10 +3,10 @@ title: Architecture cleanup (dead code, FuzzTarget, docs)
 status: open
 priority: medium
 created: 2026-03-27T02:55:57Z
-updated: 2026-03-27T02:56:41Z
+updated: 2026-03-27T02:56:42Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
-parent_of: 4a5a19d,b05f5c5,b186f73,691e4c9,90c4aa7,8a91ff8,56f6eee
+parent_of: 4a5a19d,b05f5c5,b186f73,691e4c9,90c4aa7,8a91ff8,56f6eee,e513209
 
 Umbrella epic for fix-architecture-cleanup openspec change. Covers: FuzzTarget timeout enforcement, TargetResult error type, unused dependency removal, supertypes_scm removal, visit_all dedup, compat.rs API cleanup, documentation fixes.
