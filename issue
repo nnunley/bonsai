@@ -1,9 +1,9 @@
 id: e513209
 title: Fix stale documentation (AGENTS.md, lib.rs, grammars.toml)
-status: in_progress
+status: closed
 priority: medium
 created: 2026-03-27T02:56:27Z
-updated: 2026-03-27T03:46:20Z
+updated: 2026-03-27T03:47:29Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
