@@ -273,13 +273,29 @@ fn cmd_reduce(
     } else {
         bonsai_reduce::progress::Verbosity::Normal
     };
-    let progress = bonsai_reduce::progress::ProgressReporter::new(verbosity, source.len());
+    let reporter = bonsai_reduce::progress::ProgressReporter::new(verbosity, source.len());
 
     // Run reduction
-    let result = bonsai_reduce::reducer::reduce(&source, &shell_test, config);
+    let result = bonsai_reduce::reducer::reduce(&source, &shell_test, config, Some(&reporter));
 
-    // Report final progress
-    progress.report_final(&result);
+    // Report final summary
+    if verbosity != bonsai_reduce::progress::Verbosity::Quiet {
+        let percentage = if source.len() > 0 {
+            100.0 * (1.0 - result.source.len() as f64 / source.len() as f64)
+        } else {
+            0.0
+        };
+        eprintln!(
+            "bonsai: done. {} -> {} bytes ({:.1}% reduced) in {:.1}s | tests: {} | reductions: {} | cache: {:.1}%",
+            source.len(),
+            result.source.len(),
+            percentage,
+            result.elapsed.as_secs_f64(),
+            result.tests_run,
+            result.reductions,
+            result.cache_hit_rate * 100.0,
+        );
+    }
 
     // Write output
     let target = match output {

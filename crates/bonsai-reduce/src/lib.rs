@@ -42,7 +42,7 @@
 //! };
 //!
 //! let test = ContainsPattern(b"x = 1".to_vec());
-//! let result = reduce(source, &test, config);
+//! let result = reduce(source, &test, config, None);
 //!
 //! // The reducer removed everything except what's needed for "x = 1"
 //! assert!(result.source.len() < source.len());
@@ -77,3 +77,4 @@ pub mod reducer;
 pub use cache::TestCache;
 pub use interest::{InterestingnessTest, ShellTest, TestResult};
 pub use output::{write_output, OutputTarget};
+pub use progress::{ProgressCallback, ProgressReporter, ProgressStats};

@@ -1,5 +1,30 @@
 use std::io::{self, Write};
+use std::sync::Mutex;
 use std::time::{Duration, Instant};
+
+/// Stats passed to the progress callback after each queue entry.
+pub struct ProgressStats {
+    pub original_size: usize,
+    pub current_size: usize,
+    pub tests_run: usize,
+    pub reductions: usize,
+    pub cache_hit_rate: f64,
+}
+
+/// Callback trait for receiving progress updates during reduction.
+///
+/// All methods take `&self` — implementors must use interior mutability
+/// for any mutable state (e.g., rate-limiting timestamps).
+pub trait ProgressCallback: Send + Sync {
+    /// Called after each queue entry is processed.
+    fn on_update(&self, stats: &ProgressStats);
+
+    /// Called for each candidate tested (verbose detail).
+    fn on_candidate(&self, transform_name: &str, start: usize, end: usize, accepted: bool);
+
+    /// Called when a non-fatal warning occurs (e.g., reparse failure, test error).
+    fn on_warning(&self, msg: &str);
+}
 
 /// Verbosity level for progress reporting.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -12,11 +37,11 @@ pub enum Verbosity {
     Verbose,
 }
 
-/// Reports reduction progress to stderr.
+/// Reports reduction progress to stderr. Implements `ProgressCallback`.
 pub struct ProgressReporter {
     verbosity: Verbosity,
     original_size: usize,
-    last_report: Instant,
+    last_report: Mutex<Instant>,
     min_interval: Duration,
 }
 
@@ -25,25 +50,29 @@ impl ProgressReporter {
         Self {
             verbosity,
             original_size,
-            last_report: Instant::now() - Duration::from_secs(10), // ensure first report happens
+            last_report: Mutex::new(Instant::now() - Duration::from_secs(10)),
             min_interval: Duration::from_secs(1),
         }
     }
+}
 
-    /// Report current progress. Rate-limited to ~1/sec in Normal mode.
-    pub fn report(&mut self, current_size: usize, tests_run: usize, reductions: usize, cache_hit_rate: f64) {
+impl ProgressCallback for ProgressReporter {
+    fn on_update(&self, stats: &ProgressStats) {
         if self.verbosity == Verbosity::Quiet {
             return;
         }
 
         let now = Instant::now();
-        if self.verbosity == Verbosity::Normal && now.duration_since(self.last_report) < self.min_interval {
-            return;
+        {
+            let mut last = self.last_report.lock().unwrap();
+            if self.verbosity == Verbosity::Normal && now.duration_since(*last) < self.min_interval {
+                return;
+            }
+            *last = now;
         }
-        self.last_report = now;
 
         let percentage = if self.original_size > 0 {
-            100.0 * (1.0 - current_size as f64 / self.original_size as f64)
+            100.0 * (1.0 - stats.current_size as f64 / self.original_size as f64)
         } else {
             0.0
         };
@@ -52,50 +81,30 @@ impl ProgressReporter {
             io::stderr(),
             "bonsai: {} -> {} bytes ({:.1}% reduced) | tests: {} | reductions: {} | cache: {:.1}%",
             self.original_size,
-            current_size,
+            stats.current_size,
             percentage,
-            tests_run,
-            reductions,
-            cache_hit_rate * 100.0,
+            stats.tests_run,
+            stats.reductions,
+            stats.cache_hit_rate * 100.0,
         );
     }
 
-    /// Report a single candidate being tested (verbose mode only).
-    pub fn report_candidate(&self, transform_name: &str, start_byte: usize, end_byte: usize, interesting: bool) {
+    fn on_candidate(&self, transform_name: &str, start: usize, end: usize, accepted: bool) {
         if self.verbosity != Verbosity::Verbose {
             return;
         }
-        let status = if interesting { "INTERESTING" } else { "skip" };
+        let status = if accepted { "INTERESTING" } else { "skip" };
         let _ = writeln!(
             io::stderr(),
             "  {} [{}-{}]: {}",
-            transform_name, start_byte, end_byte, status,
+            transform_name, start, end, status,
         );
     }
 
-    /// Report final result.
-    pub fn report_final(&self, result: &crate::reducer::ReducerResult) {
-        if self.verbosity == Verbosity::Quiet {
-            return;
+    fn on_warning(&self, msg: &str) {
+        if self.verbosity != Verbosity::Quiet {
+            let _ = writeln!(io::stderr(), "bonsai: warning: {}", msg);
         }
-
-        let percentage = if self.original_size > 0 {
-            100.0 * (1.0 - result.source.len() as f64 / self.original_size as f64)
-        } else {
-            0.0
-        };
-
-        let _ = writeln!(
-            io::stderr(),
-            "bonsai: done. {} -> {} bytes ({:.1}% reduced) in {:.1}s | tests: {} | reductions: {} | cache: {:.1}%",
-            self.original_size,
-            result.source.len(),
-            percentage,
-            result.elapsed.as_secs_f64(),
-            result.tests_run,
-            result.reductions,
-            result.cache_hit_rate * 100.0,
-        );
     }
 }
 
@@ -105,37 +114,50 @@ mod tests {
 
     #[test]
     fn test_quiet_produces_no_output() {
-        let mut reporter = ProgressReporter::new(Verbosity::Quiet, 100);
-        // Should not panic, and should produce no output
-        reporter.report(50, 10, 2, 0.5);
+        let reporter = ProgressReporter::new(Verbosity::Quiet, 100);
+        reporter.on_update(&ProgressStats {
+            original_size: 100,
+            current_size: 50,
+            tests_run: 10,
+            reductions: 2,
+            cache_hit_rate: 0.5,
+        });
     }
 
     #[test]
     fn test_normal_mode_reports() {
-        let mut reporter = ProgressReporter::new(Verbosity::Normal, 100);
-        // First report should always go through
-        reporter.report(80, 5, 1, 0.3);
-        // This is mostly a smoke test — hard to capture stderr in tests
+        let reporter = ProgressReporter::new(Verbosity::Normal, 100);
+        reporter.on_update(&ProgressStats {
+            original_size: 100,
+            current_size: 80,
+            tests_run: 5,
+            reductions: 1,
+            cache_hit_rate: 0.3,
+        });
     }
 
     #[test]
     fn test_verbose_reports_candidates() {
         let reporter = ProgressReporter::new(Verbosity::Verbose, 100);
-        reporter.report_candidate("delete", 10, 20, false);
-        reporter.report_candidate("delete", 10, 20, true);
-    }
-
-    #[test]
-    fn test_percentage_calculation() {
-        let mut reporter = ProgressReporter::new(Verbosity::Normal, 200);
-        // 100 bytes = 50% reduced — just verify it doesn't panic
-        reporter.report(100, 5, 1, 0.0);
+        reporter.on_candidate("delete", 10, 20, false);
+        reporter.on_candidate("delete", 10, 20, true);
     }
 
     #[test]
     fn test_zero_original_size() {
-        let mut reporter = ProgressReporter::new(Verbosity::Normal, 0);
-        // Should not divide by zero
-        reporter.report(0, 0, 0, 0.0);
+        let reporter = ProgressReporter::new(Verbosity::Normal, 0);
+        reporter.on_update(&ProgressStats {
+            original_size: 0,
+            current_size: 0,
+            tests_run: 0,
+            reductions: 0,
+            cache_hit_rate: 0.0,
+        });
+    }
+
+    #[test]
+    fn test_on_warning() {
+        let reporter = ProgressReporter::new(Verbosity::Normal, 100);
+        reporter.on_warning("test warning");
     }
 }

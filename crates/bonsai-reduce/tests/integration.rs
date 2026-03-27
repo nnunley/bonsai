@@ -37,7 +37,7 @@ fn test_reduce_python_keeps_target_line() {
     ).unwrap();
 
     let config = make_config("python", true);
-    let result = reduce(source, &test, config);
+    let result = reduce(source, &test, config, None);
 
     assert!(result.source.len() < source.len(),
         "Should reduce: {} -> {} bytes", source.len(), result.source.len());
@@ -65,7 +65,7 @@ fn test_reduce_javascript() {
     ).unwrap();
 
     let config = make_config("javascript", true);
-    let result = reduce(source, &test, config);
+    let result = reduce(source, &test, config, None);
 
     assert!(result.source.len() < source.len());
     let output = String::from_utf8_lossy(&result.source);
@@ -82,7 +82,7 @@ fn test_reduce_output_is_valid_parse() {
     ).unwrap();
 
     let config = make_config("python", true);
-    let result = reduce(source, &test, config);
+    let result = reduce(source, &test, config, None);
 
     let lang = languages::get_language("python").unwrap();
     let tree = bonsai_core::parse::parse(&result.source, &lang).unwrap();
@@ -113,7 +113,7 @@ fn test_reduce_with_no_supertypes() {
         interrupted: Arc::new(AtomicBool::new(false)),
     };
 
-    let result = reduce(source, &test, config);
+    let result = reduce(source, &test, config, None);
 
     assert!(result.source.len() < source.len(),
         "Should reduce even without supertypes: {} -> {}",
@@ -132,7 +132,7 @@ fn test_reduce_caching_effectiveness() {
     ).unwrap();
 
     let config = make_config("python", true);
-    let result = reduce(source, &test, config);
+    let result = reduce(source, &test, config, None);
 
     assert!(result.tests_run > 0);
     assert!(result.cache_hit_rate >= 0.0);

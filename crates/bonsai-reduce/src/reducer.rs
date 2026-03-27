@@ -9,6 +9,7 @@ use bonsai_core::validity;
 
 use crate::cache::TestCache;
 use crate::interest::{InterestingnessTest, TestResult};
+use crate::progress::{ProgressCallback, ProgressStats};
 use crate::queue::ReductionQueue;
 
 /// Configuration for a reduction run.
@@ -59,6 +60,7 @@ pub fn reduce(
     source: &[u8],
     test: &dyn InterestingnessTest,
     config: ReducerConfig,
+    progress: Option<&dyn ProgressCallback>,
 ) -> ReducerResult {
     let start = Instant::now();
     let mut current_source = source.to_vec();
@@ -182,7 +184,9 @@ pub fn reduce(
                         accepted = true;
                     }
                     None => {
-                        eprintln!("bonsai: warning: reparse failed after accepted candidate, skipping");
+                        if let Some(p) = progress {
+                            p.on_warning("reparse failed after accepted candidate, skipping");
+                        }
                         current_source = source.to_vec();
                     }
                 }
@@ -195,9 +199,13 @@ pub fn reduce(
             match &test_result {
                 TestResult::Error(msg) => {
                     consecutive_errors += 1;
-                    eprintln!("bonsai: test error: {}", msg);
+                    if let Some(p) = progress {
+                        p.on_warning(&format!("test error: {}", msg));
+                    }
                     if consecutive_errors > config.max_test_errors {
-                        eprintln!("bonsai: aborting after {} consecutive test errors", consecutive_errors);
+                        if let Some(p) = progress {
+                            p.on_warning(&format!("aborting after {} consecutive test errors", consecutive_errors));
+                        }
                         break;
                     }
                     continue;
@@ -225,12 +233,25 @@ pub fn reduce(
                         accepted = true;
                     }
                     None => {
-                        eprintln!("bonsai: warning: reparse failed after accepted candidate, skipping");
+                        if let Some(p) = progress {
+                            p.on_warning("reparse failed after accepted candidate, skipping");
+                        }
                         current_source = source.to_vec();
                     }
                 }
                 break;
             }
+        }
+
+        // Report progress after processing each queue entry
+        if let Some(p) = progress {
+            p.on_update(&ProgressStats {
+                original_size: source.len(),
+                current_size: current_source.len(),
+                tests_run,
+                reductions,
+                cache_hit_rate: cache.hit_rate(),
+            });
         }
 
         if accepted {
@@ -363,7 +384,7 @@ mod tests {
         let test = ContainsTest::new(b"x = 1");
         let config = make_config(lang, true);
 
-        let result = reduce(source, &test, config);
+        let result = reduce(source, &test, config, None);
 
         // Should keep "x = 1" and remove the rest
         assert!(
@@ -388,7 +409,7 @@ mod tests {
         let test = ContainsTest::new(b"x");
         let config = make_config(lang, true);
 
-        let result = reduce(source, &test, config);
+        let result = reduce(source, &test, config, None);
         // Can't reduce further
         assert_eq!(result.source, source);
     }
@@ -401,7 +422,7 @@ mod tests {
         let mut config = make_config(lang, true);
         config.max_tests = 3;
 
-        let result = reduce(source, &test, config);
+        let result = reduce(source, &test, config, None);
         assert!(
             result.tests_run <= 3,
             "Should stop after max_tests: ran {}",
@@ -418,8 +439,8 @@ mod tests {
         let config1 = make_config(lang.clone(), true);
         let config2 = make_config(lang, true);
 
-        let result1 = reduce(source, &test1, config1);
-        let result2 = reduce(source, &test2, config2);
+        let result1 = reduce(source, &test1, config1, None);
+        let result2 = reduce(source, &test2, config2, None);
 
         assert_eq!(
             result1.source, result2.source,
@@ -434,7 +455,7 @@ mod tests {
         let test = ContainsTest::new(b"x = 1");
         let config = make_config(lang, true);
 
-        let result = reduce(source, &test, config);
+        let result = reduce(source, &test, config, None);
         // Cache should have some entries
         assert!(result.cache_hit_rate >= 0.0);
     }
@@ -446,7 +467,7 @@ mod tests {
         let test = ContainsTest::new(b"x");
         let config = make_config(lang, true);
 
-        let result = reduce(source, &test, config);
+        let result = reduce(source, &test, config, None);
         assert_eq!(result.source, b"");
     }
 
@@ -457,7 +478,7 @@ mod tests {
         let source = b"x = 1\ny = 2";
         let test = ContainsTest::new(b"x = 1");
         let config = make_config(lang, true);
-        let result = reduce(source, &test, config);
+        let result = reduce(source, &test, config, None);
 
         // The final result must pass the test
         assert_eq!(test.test(&result.source), TestResult::Interesting,
@@ -473,7 +494,7 @@ mod tests {
         let config = make_config(lang, true);
         config.interrupted.store(true, Ordering::Relaxed);
 
-        let result = reduce(source, &test, config);
+        let result = reduce(source, &test, config, None);
         // Should stop immediately without running tests
         assert_eq!(result.tests_run, 0);
     }
@@ -495,9 +516,45 @@ mod tests {
         let mut config = make_config(lang, true);
         config.max_test_errors = 2;
 
-        let result = reduce(source, &test, config);
+        let result = reduce(source, &test, config, None);
         // Should abort after 2 consecutive errors, returning original source
         assert_eq!(result.source, source);
         assert!(result.tests_run <= 3, "Should abort quickly, ran {} tests", result.tests_run);
+    }
+
+    /// Mock progress callback that counts invocations.
+    struct CountingCallback {
+        updates: AtomicUsize,
+    }
+
+    impl CountingCallback {
+        fn new() -> Self {
+            Self { updates: AtomicUsize::new(0) }
+        }
+    }
+
+    impl ProgressCallback for CountingCallback {
+        fn on_update(&self, _stats: &ProgressStats) {
+            self.updates.fetch_add(1, Ordering::Relaxed);
+        }
+        fn on_candidate(&self, _name: &str, _start: usize, _end: usize, _accepted: bool) {}
+        fn on_warning(&self, _msg: &str) {}
+    }
+
+    #[test]
+    fn test_progress_callback_invoked() {
+        let lang = bonsai_core::languages::get_language("python").unwrap();
+        let source = b"x = 1\ny = 2\nz = 3";
+        let test = ContainsTest::new(b"x = 1");
+        let config = make_config(lang, true);
+        let callback = CountingCallback::new();
+
+        let result = reduce(source, &test, config, Some(&callback));
+
+        assert!(result.reductions > 0, "Should have made reductions");
+        assert!(
+            callback.updates.load(Ordering::Relaxed) > 0,
+            "Progress callback should have been invoked"
+        );
     }
 }
