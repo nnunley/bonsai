@@ -1,9 +1,9 @@
 id: bb88d9e
 title: Wire scope-aware transforms into CLI
-status: in_progress
+status: closed
 priority: medium
 created: 2026-03-27T13:25:24Z
-updated: 2026-03-27T13:34:34Z
+updated: 2026-03-27T13:38:56Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
