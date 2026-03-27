@@ -100,6 +100,7 @@ dependencies = [
  "cc",
  "hegeltest",
  "serde",
+ "serde_json",
  "toml",
  "tree-sitter",
  "tree-sitter-language",

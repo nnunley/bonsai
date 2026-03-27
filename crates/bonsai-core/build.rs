@@ -80,6 +80,52 @@ fn compile_grammar(workspace_root: &Path, lang: &LanguageEntry) {
     }
 }
 
+/// A type entry from node-types.json.
+#[derive(Deserialize)]
+struct NodeTypeEntry {
+    #[serde(rename = "type")]
+    type_name: String,
+    named: bool,
+    subtypes: Option<Vec<NodeTypeRef>>,
+}
+
+#[derive(Deserialize)]
+struct NodeTypeRef {
+    #[serde(rename = "type")]
+    type_name: String,
+    named: bool,
+}
+
+/// Parse node-types.json and return supertype→[subtype] mappings.
+/// Supertypes are entries with a `subtypes` array (convention: names start with `_`).
+fn parse_node_types(grammar_dir: &Path, src_dir_name: &str) -> Vec<(String, Vec<String>)> {
+    let node_types_path = grammar_dir.join(src_dir_name).join("node-types.json");
+    if !node_types_path.exists() {
+        return Vec::new();
+    }
+    println!("cargo:rerun-if-changed={}", node_types_path.display());
+
+    let json_str = fs::read_to_string(&node_types_path)
+        .unwrap_or_else(|e| panic!("Failed to read {}: {}", node_types_path.display(), e));
+    let entries: Vec<NodeTypeEntry> = serde_json::from_str(&json_str)
+        .unwrap_or_else(|e| panic!("Failed to parse {}: {}", node_types_path.display(), e));
+
+    entries
+        .into_iter()
+        .filter_map(|entry| {
+            entry.subtypes.map(|subtypes| {
+                let subtype_names: Vec<String> = subtypes
+                    .into_iter()
+                    .filter(|s| s.named)
+                    .map(|s| s.type_name)
+                    .collect();
+                (entry.type_name, subtype_names)
+            })
+        })
+        .filter(|(_, subtypes)| !subtypes.is_empty())
+        .collect()
+}
+
 fn generate_languages_rs(out_dir: &Path, languages: &[LanguageEntry], workspace_root: &Path) {
     let mut code = String::new();
 
@@ -185,6 +231,54 @@ fn generate_languages_rs(out_dir: &Path, languages: &[LanguageEntry], workspace_
         .unwrap();
     }
     writeln!(code, "    ]").unwrap();
+    writeln!(code, "}}").unwrap();
+
+    // Generate node-types supertype mappings per language
+    writeln!(code).unwrap();
+    writeln!(
+        code,
+        "/// Get supertype mappings from node-types.json for a language."
+    )
+    .unwrap();
+    writeln!(
+        code,
+        "/// Returns (supertype_name, [subtype_names]) pairs."
+    )
+    .unwrap();
+    writeln!(
+        code,
+        "pub fn get_node_types_supertypes(name: &str) -> &'static [(&'static str, &'static [&'static str])] {{"
+    )
+    .unwrap();
+    writeln!(code, "    match name {{").unwrap();
+
+    for lang in languages {
+        let grammar_dir = workspace_root.join(&lang.grammar);
+        let mappings = parse_node_types(&grammar_dir, &lang.src);
+
+        if mappings.is_empty() {
+            writeln!(code, "        \"{}\" => &[],", lang.name).unwrap();
+        } else {
+            writeln!(code, "        \"{}\" => &[", lang.name).unwrap();
+            for (supertype, subtypes) in &mappings {
+                let subtypes_str = subtypes
+                    .iter()
+                    .map(|s| format!("\"{}\"", s))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                writeln!(
+                    code,
+                    "            (\"{}\", &[{}]),",
+                    supertype, subtypes_str
+                )
+                .unwrap();
+            }
+            writeln!(code, "        ],").unwrap();
+        }
+    }
+
+    writeln!(code, "        _ => &[],").unwrap();
+    writeln!(code, "    }}").unwrap();
     writeln!(code, "}}").unwrap();
 
     let output_path = out_dir.join("languages.rs");
