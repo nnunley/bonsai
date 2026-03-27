@@ -1,9 +1,9 @@
 id: 8f3fe59
 title: Embed locals.scm contents at build time
-status: in_progress
+status: closed
 priority: medium
 created: 2026-03-27T13:25:24Z
-updated: 2026-03-27T13:25:43Z
+updated: 2026-03-27T13:27:11Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
