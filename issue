@@ -1,0 +1,11 @@
+id: 90c4aa7
+title: Remove unused is_interrupted from output.rs
+status: open
+priority: medium
+created: 2026-03-27T02:56:27Z
+updated: 2026-03-27T02:56:27Z
+author: Norman Nunley, Jr
+assignee: Norman Nunley, Jr
+hash_source: content
+
+Remove pub fn is_interrupted from output.rs — zero callers.
