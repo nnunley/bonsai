@@ -1,9 +1,9 @@
 id: f3b97e2
 title: Architecture cleanup (dead code, FuzzTarget, docs)
-status: open
+status: closed
 priority: medium
 created: 2026-03-27T02:55:57Z
-updated: 2026-03-27T02:56:42Z
+updated: 2026-03-27T13:06:30Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
