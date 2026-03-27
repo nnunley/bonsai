@@ -48,7 +48,7 @@ impl Transform for UnwrapTransform {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{languages, parse, supertype::LanguageApiProvider, validity};
+    use crate::{languages, parse, supertype::LanguageApiProvider};
 
     #[test]
     fn test_unwrap_parenthesized_expression() {
@@ -118,20 +118,5 @@ mod tests {
         });
     }
 
-    fn visit_all(cursor: &mut tree_sitter::TreeCursor, f: &mut dyn FnMut(Node)) {
-        f(cursor.node());
-        if cursor.goto_first_child() {
-            loop {
-                visit_all(cursor, f);
-                if !cursor.goto_next_sibling() {
-                    break;
-                }
-            }
-            cursor.goto_parent();
-        }
-    }
-
-    // Suppress unused import warning for `validity` — it's used for type context in tests
-    #[allow(dead_code)]
-    fn _use_validity(_: validity::Replacement) {}
+    use crate::test_utils::visit_all;
 }

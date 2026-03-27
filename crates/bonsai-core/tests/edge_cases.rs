@@ -52,7 +52,7 @@ fn test_delete_transform_all_grammars() {
         let root = tree.root_node();
         let mut has_candidates = false;
         let mut cursor = root.walk();
-        visit_all(&mut cursor, &mut |node| {
+        visit_all(&mut cursor, &mut |node: tree_sitter::Node| {
             if node.is_named() {
                 let candidates = delete.candidates(&node, source, &tree, &provider);
                 if !candidates.is_empty() {
@@ -149,15 +149,4 @@ fn test_error_set_empty_tree() {
     assert!(errors.is_empty());
 }
 
-fn visit_all(cursor: &mut tree_sitter::TreeCursor, f: &mut dyn FnMut(tree_sitter::Node)) {
-    f(cursor.node());
-    if cursor.goto_first_child() {
-        loop {
-            visit_all(cursor, f);
-            if !cursor.goto_next_sibling() {
-                break;
-            }
-        }
-        cursor.goto_parent();
-    }
-}
+use bonsai_core::test_utils::visit_all;

@@ -117,17 +117,5 @@ mod tests {
         assert!(is_named_node(&root)); // "module" is named
     }
 
-    // Helper to visit all nodes
-    fn visit_all(cursor: &mut tree_sitter::TreeCursor, f: &mut dyn FnMut(Node)) {
-        f(cursor.node());
-        if cursor.goto_first_child() {
-            loop {
-                visit_all(cursor, f);
-                if !cursor.goto_next_sibling() {
-                    break;
-                }
-            }
-            cursor.goto_parent();
-        }
-    }
+    use crate::test_utils::visit_all;
 }

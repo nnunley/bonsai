@@ -87,6 +87,23 @@ pub mod languages {
     include!(concat!(env!("OUT_DIR"), "/languages.rs"));
 }
 
+#[doc(hidden)]
+pub mod test_utils {
+    /// Recursively visit all nodes in a tree-sitter tree.
+    pub fn visit_all(cursor: &mut tree_sitter::TreeCursor, f: &mut dyn FnMut(tree_sitter::Node)) {
+        f(cursor.node());
+        if cursor.goto_first_child() {
+            loop {
+                visit_all(cursor, f);
+                if !cursor.goto_next_sibling() {
+                    break;
+                }
+            }
+            cursor.goto_parent();
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::languages;
