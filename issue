@@ -3,9 +3,10 @@ title: Embed locals.scm contents at build time
 status: open
 priority: medium
 created: 2026-03-27T13:25:24Z
-updated: 2026-03-27T13:25:24Z
+updated: 2026-03-27T13:25:33Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
+blocks: 783bfbf
 
 Change build.rs to embed locals.scm file contents (not just path) into LanguageInfo. Add locals_scm_content: Option<&str> field.
