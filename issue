@@ -1,0 +1,11 @@
+id: f466121
+title: Parallel candidate testing with rayon
+status: open
+priority: medium
+created: 2026-03-27T02:57:19Z
+updated: 2026-03-27T02:57:19Z
+author: Norman Nunley, Jr
+assignee: Norman Nunley, Jr
+hash_source: content
+
+Refactor inner candidate loop. Use rayon par_iter().find_first() for jobs > 1. Sequential for jobs == 1. Accept first interesting result.
