@@ -1,6 +1,6 @@
 id: 2692120
 title: ShellTest::new returns Result
-status: open
+status: blocked
 priority: medium
 created: 2026-03-27T02:56:25Z
 updated: 2026-03-27T02:56:52Z
