@@ -1,0 +1,11 @@
+id: 853a5f8
+title: InterruptFlag encapsulation
+status: open
+priority: medium
+created: 2026-03-27T02:56:26Z
+updated: 2026-03-27T02:56:26Z
+author: Norman Nunley, Jr
+assignee: Norman Nunley, Jr
+hash_source: content
+
+Create InterruptFlag struct in bonsai-cli encapsulating Arc<AtomicBool> + ctrlc handler. Returns Result instead of .ok(). Replace scattered wiring in main.rs.
