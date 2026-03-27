@@ -256,6 +256,12 @@ fn cmd_reduce(
 
     // Set up provider
     let provider = bonsai_core::supertype::LanguageApiProvider::new(&language);
+    if !provider.has_supertypes() {
+        eprintln!(
+            "bonsai: note: grammar has no supertypes — only Delete transform will be effective. \
+             Unwrap requires type compatibility information."
+        );
+    }
 
     // Set up config
     let config = bonsai_reduce::reducer::ReducerConfig {
