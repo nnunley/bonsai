@@ -1,9 +1,9 @@
 id: 045f096
 title: Cache concurrency for parallel reduction
-status: open
+status: in_progress
 priority: medium
 created: 2026-03-27T02:57:19Z
-updated: 2026-03-27T02:57:28Z
+updated: 2026-03-27T05:32:59Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
