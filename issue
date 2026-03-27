@@ -1,9 +1,9 @@
 id: 986115f
 title: Unwrap removal on reparse
-status: in_progress
+status: closed
 priority: medium
 created: 2026-03-27T02:56:26Z
-updated: 2026-03-27T05:21:18Z
+updated: 2026-03-27T05:22:05Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
