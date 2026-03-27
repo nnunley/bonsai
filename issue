@@ -1,0 +1,11 @@
+id: ce90b06
+title: TestResult enum and InterestingnessTest API change
+status: open
+priority: medium
+created: 2026-03-27T02:56:25Z
+updated: 2026-03-27T02:56:25Z
+author: Norman Nunley, Jr
+assignee: Norman Nunley, Jr
+hash_source: content
+
+Define TestResult enum (NotInteresting, Interesting, Error(String)). Change InterestingnessTest trait from is_interesting->bool to test->TestResult. Update ShellTest, ContainsTest, all tests and doctests.
