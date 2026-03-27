@@ -1,0 +1,11 @@
+id: 2580113
+title: Wire NodeTypesProvider into ChainProvider
+status: open
+priority: medium
+created: 2026-03-27T13:13:48Z
+updated: 2026-03-27T13:13:48Z
+author: Norman Nunley, Jr
+assignee: Norman Nunley, Jr
+hash_source: content
+
+Update CLI to use ChainProvider: LanguageApiProvider → NodeTypesProvider. Verify grammars without runtime supertypes get info.
