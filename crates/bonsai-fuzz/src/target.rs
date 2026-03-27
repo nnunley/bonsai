@@ -2,6 +2,7 @@ use std::io::Write;
 use std::process::{Command, Stdio};
 use std::time::Duration;
 use tempfile::NamedTempFile;
+use wait_timeout::ChildExt;
 
 /// How to pass generated input to the target program.
 #[derive(Debug, Clone)]
@@ -83,20 +84,38 @@ impl FuzzTarget {
             // stdin is dropped here, closing the pipe
         }
 
-        match child.wait_with_output() {
-            Ok(output) => {
+        match child.wait_timeout(self.timeout) {
+            Ok(Some(status)) => {
+                // Collect stderr from the child
+                let mut stderr = Vec::new();
+                if let Some(mut err) = child.stderr.take() {
+                    let _ = std::io::Read::read_to_end(&mut err, &mut stderr);
+                }
+
                 #[cfg(unix)]
                 let signal = {
                     use std::os::unix::process::ExitStatusExt;
-                    output.status.signal()
+                    status.signal()
                 };
 
                 TargetResult {
-                    exit_code: output.status.code(),
-                    stderr: output.stderr,
+                    exit_code: status.code(),
+                    stderr,
                     timed_out: false,
                     #[cfg(unix)]
                     signal,
+                }
+            }
+            Ok(None) => {
+                // Timeout — kill the process
+                let _ = child.kill();
+                let _ = child.wait();
+                TargetResult {
+                    exit_code: None,
+                    stderr: Vec::new(),
+                    timed_out: true,
+                    #[cfg(unix)]
+                    signal: None,
                 }
             }
             Err(_) => TargetResult::error(),
@@ -120,40 +139,59 @@ impl FuzzTarget {
         };
 
         let resolved_args: Vec<String> = if replace_placeholder {
-            // Replace @@ with temp file path in all args
             args.iter()
                 .map(|a| a.replace("@@", &tmp_path))
                 .collect()
         } else {
-            // Append temp file path as last argument
             let mut a: Vec<String> = args.to_vec();
             a.push(tmp_path);
             a
         };
 
-        let output = match Command::new(program)
+        let mut child = match Command::new(program)
             .args(&resolved_args)
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::piped())
-            .output()
+            .spawn()
         {
-            Ok(o) => o,
+            Ok(c) => c,
             Err(_) => return TargetResult::error(),
         };
 
-        #[cfg(unix)]
-        let signal = {
-            use std::os::unix::process::ExitStatusExt;
-            output.status.signal()
-        };
+        match child.wait_timeout(self.timeout) {
+            Ok(Some(status)) => {
+                let mut stderr = Vec::new();
+                if let Some(mut err) = child.stderr.take() {
+                    let _ = std::io::Read::read_to_end(&mut err, &mut stderr);
+                }
 
-        TargetResult {
-            exit_code: output.status.code(),
-            stderr: output.stderr,
-            timed_out: false,
-            #[cfg(unix)]
-            signal,
+                #[cfg(unix)]
+                let signal = {
+                    use std::os::unix::process::ExitStatusExt;
+                    status.signal()
+                };
+
+                TargetResult {
+                    exit_code: status.code(),
+                    stderr,
+                    timed_out: false,
+                    #[cfg(unix)]
+                    signal,
+                }
+            }
+            Ok(None) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                TargetResult {
+                    exit_code: None,
+                    stderr: Vec::new(),
+                    timed_out: true,
+                    #[cfg(unix)]
+                    signal: None,
+                }
+            }
+            Err(_) => TargetResult::error(),
         }
     }
 }
@@ -240,5 +278,35 @@ mod tests {
         let result = target.run(b"anything");
         // Should handle gracefully, not panic
         assert!(result.exit_code.is_none() || result.timed_out);
+    }
+
+    #[test]
+    fn test_stdin_timeout() {
+        // "sleep 60" should be killed after 1 second
+        let target = FuzzTarget::new(
+            vec!["sleep".into(), "60".into()],
+            Duration::from_secs(1),
+        );
+        let start = std::time::Instant::now();
+        let result = target.run(b"anything");
+        let elapsed = start.elapsed();
+        assert!(result.timed_out, "Should have timed out");
+        assert!(elapsed < Duration::from_secs(3), "Should timeout quickly, took {:?}", elapsed);
+    }
+
+    #[test]
+    fn test_file_mode_timeout() {
+        // Use "sh -c 'sleep 60'" with ArgReplace so the temp path replaces @@
+        // but sh -c ignores the $0 argument and still sleeps
+        let target = FuzzTarget::with_input_mode(
+            vec!["sh".into(), "-c".into(), "sleep 60".into(), "@@".into()],
+            InputMode::ArgReplace("@@".to_string()),
+            Duration::from_secs(1),
+        );
+        let start = std::time::Instant::now();
+        let result = target.run(b"anything");
+        let elapsed = start.elapsed();
+        assert!(result.timed_out, "Should have timed out");
+        assert!(elapsed < Duration::from_secs(3), "Should timeout quickly, took {:?}", elapsed);
     }
 }
