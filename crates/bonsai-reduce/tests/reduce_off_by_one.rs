@@ -1,8 +1,12 @@
 //! Integration test: bonsai reduces a Python program with an off-by-one bug
-//! to its minimal form while preserving the bug-triggering code.
+//! to its minimal form while preserving the wrong output.
 //!
-//! Demonstrates bonsai's core value: given a large program that triggers a bug,
-//! automatically produce the smallest program that still triggers it.
+//! The bug: process_items uses range(len(items) - 1), so for input [1, 2, 3, 4, 5]
+//! it produces [2, 4, 6, 8] instead of [2, 4, 6, 8, 10] — the last item is skipped.
+//!
+//! The interestingness test checks that the program outputs "[2, 4, 6, 8]" (the wrong
+//! answer). Bonsai must preserve the buggy computation to maintain this output, so the
+//! reduced program contains the root cause.
 
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
@@ -15,21 +19,20 @@ use bonsai_core::transforms::unwrap::UnwrapTransform;
 use bonsai_reduce::interest::{InterestingnessTest, TestResult};
 use bonsai_reduce::reducer::{reduce, ReducerConfig};
 
-/// Interestingness test: the source must be valid Python that, when executed,
-/// outputs "off by one" in its stderr (from the ValueError). This is tighter
-/// than just checking for any ValueError — it requires the specific message
-/// from the validate() function catching the process_items() bug.
-struct RaisesOffByOne;
+/// Interestingness test: the program must produce exactly "[2, 4, 6, 8]" on stdout.
+/// This is the wrong output from the off-by-one bug — [1,2,3,4,5] doubled should be
+/// [2, 4, 6, 8, 10], but the bug skips the last element.
+struct ProducesWrongOutput;
 
-impl InterestingnessTest for RaisesOffByOne {
+impl InterestingnessTest for ProducesWrongOutput {
     fn test(&self, input: &[u8]) -> TestResult {
         use std::process::{Command, Stdio};
 
         let mut child = match Command::new("python3")
             .arg("-c")
             .arg(String::from_utf8_lossy(input).as_ref())
-            .stdout(Stdio::null())
-            .stderr(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
             .spawn()
         {
             Ok(c) => c,
@@ -38,9 +41,9 @@ impl InterestingnessTest for RaisesOffByOne {
 
         match child.wait_with_output() {
             Ok(output) => {
-                let stderr = String::from_utf8_lossy(&output.stderr);
-                // Check for the specific error message from our validate() function
-                if stderr.contains("off by one") {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                // The wrong output: 4 items instead of 5
+                if stdout.trim() == "[2, 4, 6, 8]" {
                     TestResult::Interesting
                 } else {
                     TestResult::NotInteresting
@@ -69,9 +72,9 @@ fn make_config() -> ReducerConfig {
 
 #[test]
 fn test_reduces_off_by_one_program() {
-    // A Python program with a deliberate off-by-one bug buried in surrounding code.
-    // The bug is in process_items: range(len(items) - 1) skips the last item.
-    // validate() catches this and raises ValueError.
+    // A Python program with an off-by-one bug buried in surrounding code.
+    // process_items uses range(len(items) - 1), skipping the last item.
+    // The program prints the wrong result: [2, 4, 6, 8] instead of [2, 4, 6, 8, 10].
     let source = br#"
 import sys
 import os
@@ -94,53 +97,50 @@ def process_items(items):
         results.append(items[i] * 2)
     return results
 
-def validate(items):
-    processed = process_items(items)
-    if len(processed) != len(items):
-        raise ValueError("off by one")
-    return processed
-
 def format_output(data):
     return str(data)
 
+def log(msg):
+    if DEBUG:
+        print(f"LOG: {msg}", file=sys.stderr)
+
 def main():
     setup()
-    data = [1, 2, 3]
-    result = validate(data)
+    log("starting")
+    data = [1, 2, 3, 4, 5]
+    result = process_items(data)
+    log(f"processed {len(result)} items")
     output = format_output(result)
     print(output)
+    log("done")
     teardown()
 
 if __name__ == "__main__":
     main()
 "#;
 
-    let test = RaisesOffByOne;
+    let test = ProducesWrongOutput;
     let config = make_config();
 
-    // Verify the original triggers the bug
-    assert_eq!(test.test(source), TestResult::Interesting,
-        "Original program should trigger 'off by one' ValueError");
+    // Verify the original produces the wrong output
+    assert_eq!(
+        test.test(source),
+        TestResult::Interesting,
+        "Original program should produce '[2, 4, 6, 8]'"
+    );
 
     let result = reduce(source, &test, config, None);
 
-    // Should have reduced significantly
-    assert!(
-        result.source.len() < source.len(),
-        "Should reduce: {} -> {} bytes",
-        source.len(),
-        result.source.len()
-    );
-
-    // The reduced output should still trigger the bug
+    // The reduced output should still produce the wrong answer
     assert_eq!(
         test.test(&result.source),
         TestResult::Interesting,
-        "Reduced program should still trigger 'off by one' ValueError"
+        "Reduced program should still produce '[2, 4, 6, 8]'"
     );
 
-    // Should have removed the irrelevant code (imports, setup, teardown, etc.)
     let output = String::from_utf8_lossy(&result.source);
+
+    // Should have reduced significantly — removed imports, setup, teardown, log, etc.
     assert!(
         result.source.len() < source.len() / 2,
         "Should reduce by at least 50%: {} -> {} bytes.\nReduced:\n{}",
@@ -149,16 +149,23 @@ if __name__ == "__main__":
         output
     );
 
-    // The essential error message must remain in the source
+    // The reduced code must still contain the core bug: the off-by-one in range()
+    // and the data that triggers it
     assert!(
-        output.contains("off by one"),
-        "Reduced output should contain the error message:\n{}",
+        output.contains("range"),
+        "Reduced output should preserve the range() call (the bug site):\n{}",
         output
     );
 
-    eprintln!("\n=== Reduction result ({} -> {} bytes, {:.1}% reduced) ===",
-        source.len(), result.source.len(),
-        100.0 * (1.0 - result.source.len() as f64 / source.len() as f64));
+    eprintln!(
+        "\n=== Reduction result ({} -> {} bytes, {:.1}% reduced) ===",
+        source.len(),
+        result.source.len(),
+        100.0 * (1.0 - result.source.len() as f64 / source.len() as f64)
+    );
     eprintln!("{}", output);
-    eprintln!("=== {} tests run, {} reductions ===", result.tests_run, result.reductions);
+    eprintln!(
+        "=== {} tests run, {} reductions ===",
+        result.tests_run, result.reductions
+    );
 }
