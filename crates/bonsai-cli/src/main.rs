@@ -226,13 +226,11 @@ fn cmd_reduce(
         process::exit(1);
     });
 
-    if test_args.is_empty() {
-        eprintln!("bonsai: --test command cannot be empty");
-        process::exit(1);
-    }
-
     // Set up interestingness test
-    let shell_test = bonsai_reduce::ShellTest::new(test_args, timeout);
+    let shell_test = bonsai_reduce::ShellTest::new(test_args, timeout).unwrap_or_else(|e| {
+        eprintln!("bonsai: {}", e);
+        process::exit(1);
+    });
 
     // Set up interrupt handler
     let interrupt = InterruptFlag::new().unwrap_or_else(|e| {

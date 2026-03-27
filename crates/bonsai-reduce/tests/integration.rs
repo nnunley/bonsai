@@ -30,25 +30,21 @@ fn make_config(lang_name: &str, strict: bool) -> ReducerConfig {
 fn test_reduce_python_keeps_target_line() {
     let source = b"x = 1\ny = 2\nz = 3\nw = 4\n";
 
-    // Interestingness test: source must contain "x = 1"
     let test = ShellTest::new(
         vec!["grep".into(), "-q".into(), "x = 1".into()],
         Duration::from_secs(10),
-    );
+    ).unwrap();
 
     let config = make_config("python", true);
     let result = reduce(source, &test, config);
 
-    // Should have reduced
     assert!(result.source.len() < source.len(),
         "Should reduce: {} -> {} bytes", source.len(), result.source.len());
 
-    // Should still contain "x = 1"
     let output = String::from_utf8_lossy(&result.source);
     assert!(output.contains("x = 1"),
         "Reduced output should contain 'x = 1': {}", output);
 
-    // Should be valid Python (no parse errors)
     let lang = languages::get_language("python").unwrap();
     let tree = bonsai_core::parse::parse(&result.source, &lang).unwrap();
     assert!(!bonsai_core::validity::tree_has_errors(&tree),
@@ -65,7 +61,7 @@ fn test_reduce_javascript() {
     let test = ShellTest::new(
         vec!["grep".into(), "-q".into(), "function foo".into()],
         Duration::from_secs(10),
-    );
+    ).unwrap();
 
     let config = make_config("javascript", true);
     let result = reduce(source, &test, config);
@@ -82,12 +78,11 @@ fn test_reduce_output_is_valid_parse() {
     let test = ShellTest::new(
         vec!["grep".into(), "-q".into(), "x = 1".into()],
         Duration::from_secs(10),
-    );
+    ).unwrap();
 
     let config = make_config("python", true);
     let result = reduce(source, &test, config);
 
-    // Verify the output parses without errors
     let lang = languages::get_language("python").unwrap();
     let tree = bonsai_core::parse::parse(&result.source, &lang).unwrap();
     assert!(!bonsai_core::validity::tree_has_errors(&tree),
@@ -97,14 +92,13 @@ fn test_reduce_output_is_valid_parse() {
 
 #[test]
 fn test_reduce_with_no_supertypes() {
-    // Use EmptyProvider to simulate grammar without supertypes
     let language = languages::get_language("python").unwrap();
     let source = b"x = 1\ny = 2\nz = 3\n";
 
     let test = ShellTest::new(
         vec!["grep".into(), "-q".into(), "x = 1".into()],
         Duration::from_secs(10),
-    );
+    ).unwrap();
 
     let config = ReducerConfig {
         language,
@@ -119,7 +113,6 @@ fn test_reduce_with_no_supertypes() {
 
     let result = reduce(source, &test, config);
 
-    // Should still make progress via Delete (doesn't need supertypes)
     assert!(result.source.len() < source.len(),
         "Should reduce even without supertypes: {} -> {}",
         source.len(), result.source.len());
@@ -134,14 +127,11 @@ fn test_reduce_caching_effectiveness() {
     let test = ShellTest::new(
         vec!["grep".into(), "-q".into(), "a = 1".into()],
         Duration::from_secs(10),
-    );
+    ).unwrap();
 
     let config = make_config("python", true);
     let result = reduce(source, &test, config);
 
-    // With multiple statements, there should be some cache activity
     assert!(result.tests_run > 0);
-    // Cache hit rate may be 0 if all candidates are unique, which is fine
-    // Just verify the metric is reported
     assert!(result.cache_hit_rate >= 0.0);
 }

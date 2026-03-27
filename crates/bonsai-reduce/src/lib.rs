@@ -59,7 +59,7 @@
 //! let test = ShellTest::new(
 //!     vec!["grep".into(), "-q".into(), "error".into()],
 //!     Duration::from_secs(10),
-//! );
+//! ).unwrap();
 //!
 //! // The test writes input to a temp file and passes the path as an argument
 //! assert_eq!(test.test(b"an error occurred\n"), TestResult::Interesting);

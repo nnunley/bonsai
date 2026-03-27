@@ -34,8 +34,11 @@ pub struct ShellTest {
 }
 
 impl ShellTest {
-    pub fn new(command: Vec<String>, timeout: Duration) -> Self {
-        Self { command, timeout }
+    pub fn new(command: Vec<String>, timeout: Duration) -> Result<Self, String> {
+        if command.is_empty() {
+            return Err("test command cannot be empty".into());
+        }
+        Ok(Self { command, timeout })
     }
 }
 
@@ -101,7 +104,7 @@ mod tests {
         let test = ShellTest::new(
             vec!["grep".into(), "-q".into(), "hello".into()],
             Duration::from_secs(5),
-        );
+        ).unwrap();
         assert_eq!(test.test(b"hello world\n"), TestResult::Interesting);
     }
 
@@ -110,7 +113,7 @@ mod tests {
         let test = ShellTest::new(
             vec!["grep".into(), "-q".into(), "hello".into()],
             Duration::from_secs(5),
-        );
+        ).unwrap();
         assert_eq!(test.test(b"goodbye world\n"), TestResult::NotInteresting);
     }
 
@@ -119,7 +122,7 @@ mod tests {
         let test = ShellTest::new(
             vec!["sh".into(), "-c".into(), "sleep 60".into()],
             Duration::from_secs(1),
-        );
+        ).unwrap();
         let start = std::time::Instant::now();
         let result = test.test(b"anything");
         let elapsed = start.elapsed();
@@ -132,7 +135,7 @@ mod tests {
         let test = ShellTest::new(
             vec!["grep".into(), "-q".into(), "hello".into()],
             Duration::from_secs(5),
-        );
+        ).unwrap();
         assert_eq!(test.test(b"hello world\n"), TestResult::Interesting);
     }
 
@@ -141,15 +144,14 @@ mod tests {
         let test = ShellTest::new(
             vec!["/nonexistent/command".into()],
             Duration::from_secs(5),
-        );
+        ).unwrap();
         let result = test.test(b"anything");
         assert!(matches!(result, TestResult::Error(_)), "Spawn failure should return Error");
     }
 
     #[test]
-    fn test_empty_command() {
-        let test = ShellTest::new(vec![], Duration::from_secs(5));
-        let result = test.test(b"anything");
-        assert!(matches!(result, TestResult::Error(_)), "Empty command should return Error");
+    fn test_empty_command_rejected() {
+        let result = ShellTest::new(vec![], Duration::from_secs(5));
+        assert!(result.is_err(), "Empty command should be rejected at construction");
     }
 }
