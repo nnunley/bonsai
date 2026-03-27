@@ -3,9 +3,10 @@ title: Implement DeadDefinitionTransform
 status: open
 priority: medium
 created: 2026-03-27T13:25:24Z
-updated: 2026-03-27T13:25:24Z
+updated: 2026-03-27T13:25:33Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
+depends_on: 783bfbf
 
 Using ScopeAnalysis, find definitions with zero references and propose deleting their containing statement.
