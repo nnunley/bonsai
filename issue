@@ -1,0 +1,11 @@
+id: 24ddf3a
+title: Parallel reduction with rayon
+status: open
+priority: medium
+created: 2026-03-27T02:57:11Z
+updated: 2026-03-27T02:57:11Z
+author: Norman Nunley, Jr
+assignee: Norman Nunley, Jr
+hash_source: content
+
+Umbrella epic for add-parallel-reduction openspec change. Implement parallel candidate testing, thread pool, cache concurrency, error tolerance under parallelism.
