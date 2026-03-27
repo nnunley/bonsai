@@ -1,6 +1,6 @@
 id: bb88d9e
 title: Wire scope-aware transforms into CLI
-status: open
+status: blocked
 priority: medium
 created: 2026-03-27T13:25:24Z
 updated: 2026-03-27T13:25:34Z
