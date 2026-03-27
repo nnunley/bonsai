@@ -7,6 +7,6 @@ updated: 2026-03-27T02:57:27Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
-parent_of: f466121,a87bbc2,045f096
+parent_of: f466121,a87bbc2,045f096,ddc4088
 
 Umbrella epic for add-parallel-reduction openspec change. Implement parallel candidate testing, thread pool, cache concurrency, error tolerance under parallelism.
