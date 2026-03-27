@@ -1,9 +1,9 @@
 id: 2f5d72c
 title: Implement DeadDefinitionTransform
-status: open
+status: in_progress
 priority: medium
 created: 2026-03-27T13:25:24Z
-updated: 2026-03-27T13:32:42Z
+updated: 2026-03-27T13:32:51Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
