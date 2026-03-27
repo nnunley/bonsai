@@ -1,0 +1,11 @@
+id: 56f6eee
+title: Deduplicate visit_all test helper
+status: open
+priority: medium
+created: 2026-03-27T02:56:27Z
+updated: 2026-03-27T02:56:27Z
+author: Norman Nunley, Jr
+assignee: Norman Nunley, Jr
+hash_source: content
+
+Add #[cfg(test)] pub mod test_utils in bonsai-core/src/lib.rs with shared visit_all. Replace copies in compat.rs, delete.rs, unwrap.rs, edge_cases.rs.
