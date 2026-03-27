@@ -1,9 +1,9 @@
 id: 56f6eee
 title: Deduplicate visit_all test helper
-status: in_progress
+status: closed
 priority: medium
 created: 2026-03-27T02:56:27Z
-updated: 2026-03-27T03:40:46Z
+updated: 2026-03-27T03:43:26Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
