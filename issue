@@ -10,3 +10,6 @@ hash_source: content
 blocks: 2692120,f7fa27d,1a078f2,4dd71d7,a87bbc2
 
 Define TestResult enum (NotInteresting, Interesting, Error(String)). Change InterestingnessTest trait from is_interesting->bool to test->TestResult. Update ShellTest, ContainsTest, all tests and doctests.
+
+## Comments
+[2026-03-27T03:40:33Z] Norman Nunley, Jr: Resolved by commit 612b735: feat(reduce): replace is_interesting bool with TestResult enum
