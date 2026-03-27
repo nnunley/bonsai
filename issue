@@ -1,9 +1,9 @@
 id: 691e4c9
 title: Remove supertypes_scm dead artifact
-status: in_progress
+status: closed
 priority: medium
 created: 2026-03-27T02:56:27Z
-updated: 2026-03-27T03:40:46Z
+updated: 2026-03-27T03:42:12Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
