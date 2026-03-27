@@ -1,9 +1,9 @@
 id: 2692120
 title: ShellTest::new returns Result
-status: open
+status: in_progress
 priority: medium
 created: 2026-03-27T02:56:25Z
-updated: 2026-03-27T05:16:59Z
+updated: 2026-03-27T05:17:07Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
