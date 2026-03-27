@@ -7,6 +7,6 @@ updated: 2026-03-27T13:13:54Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
-parent_of: df9170c
+parent_of: df9170c,579de99
 
 Umbrella: parse node-types.json at build time, generate static supertype mappings, implement NodeTypesProvider.
