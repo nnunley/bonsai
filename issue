@@ -3,9 +3,10 @@ title: Fix reducer gaps (architecture findings)
 status: open
 priority: medium
 created: 2026-03-27T02:55:57Z
-updated: 2026-03-27T02:55:57Z
+updated: 2026-03-27T02:56:38Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
+parent_of: ce90b06
 
 Umbrella epic for fix-reducer-gaps openspec change. Covers: TestResult enum, progress callback trait, ShellTest validation, error tolerance, InterruptFlag, unwrap removal, initial input validation, no-supertype warning, locals parsing, spec updates.
