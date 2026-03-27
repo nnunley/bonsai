@@ -1,9 +1,9 @@
 id: f466121
 title: Parallel candidate testing with rayon
-status: blocked
+status: open
 priority: medium
 created: 2026-03-27T02:57:19Z
-updated: 2026-03-27T02:57:28Z
+updated: 2026-03-27T05:36:49Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
