@@ -122,7 +122,7 @@ pub fn reduce(
         None => {
             return ReducerResult {
                 source: current_source,
-                tests_run: 0,
+                tests_run,
                 reductions: 0,
                 cache_hit_rate: 0.0,
                 elapsed: start.elapsed(),
@@ -157,7 +157,7 @@ pub fn reduce(
         if config.max_time > Duration::ZERO && start.elapsed() >= config.max_time {
             break;
         }
-        if consecutive_errors > config.max_test_errors {
+        if consecutive_errors >= config.max_test_errors {
             break;
         }
 
@@ -235,7 +235,7 @@ pub fn reduce(
                                 if let Some(p) = progress {
                                     p.on_warning(&format!("test error: {}", msg));
                                 }
-                                if errs > config.max_test_errors {
+                                if errs >= config.max_test_errors {
                                     abort_flag.store(true, Ordering::Relaxed);
                                 }
                                 false
@@ -274,7 +274,7 @@ pub fn reduce(
                 if config.max_time > Duration::ZERO && start.elapsed() >= config.max_time {
                     break;
                 }
-                if consecutive_errors > config.max_test_errors {
+                if consecutive_errors >= config.max_test_errors {
                     break;
                 }
 
@@ -299,7 +299,7 @@ pub fn reduce(
                         if let Some(p) = progress {
                             p.on_warning(&format!("test error: {}", msg));
                         }
-                        if consecutive_errors > config.max_test_errors {
+                        if consecutive_errors >= config.max_test_errors {
                             if let Some(p) = progress {
                                 p.on_warning(&format!(
                                     "aborting after {} consecutive test errors",
@@ -329,7 +329,7 @@ pub fn reduce(
 
         // Accept winning candidate
         if let Some(new_source) = winning_source {
-            current_source = new_source;
+            let prev_source = std::mem::replace(&mut current_source, new_source);
             match bonsai_core::parse::parse(&current_source, &config.language) {
                 Some(new_tree) => {
                     tree = new_tree;
@@ -349,9 +349,10 @@ pub fn reduce(
                 }
                 None => {
                     if let Some(p) = progress {
-                        p.on_warning("reparse failed after accepted candidate, skipping");
+                        p.on_warning("reparse failed after accepted candidate, reverting");
                     }
-                    current_source = source.to_vec();
+                    // Revert to previous good state — tree/queue/initial_errors remain valid
+                    current_source = prev_source;
                 }
             }
         }

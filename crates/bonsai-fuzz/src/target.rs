@@ -97,7 +97,14 @@ impl FuzzTarget {
 
         // Write input to stdin then close it
         if let Some(mut stdin) = child.stdin.take() {
-            let _ = stdin.write_all(input);
+            if let Err(e) = stdin.write_all(input) {
+                // Kill the child since it didn't receive full input
+                let _ = child.kill();
+                let _ = child.wait();
+                return Err(TargetError {
+                    message: format!("failed to write to stdin: {e}"),
+                });
+            }
         }
 
         match child.wait_timeout(self.timeout) {
