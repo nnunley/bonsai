@@ -7,6 +7,6 @@ updated: 2026-03-27T02:56:39Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
-parent_of: ce90b06,2692120,f7fa27d,1a078f2,4dd71d7
+parent_of: ce90b06,2692120,f7fa27d,1a078f2,4dd71d7,853a5f8
 
 Umbrella epic for fix-reducer-gaps openspec change. Covers: TestResult enum, progress callback trait, ShellTest validation, error tolerance, InterruptFlag, unwrap removal, initial input validation, no-supertype warning, locals parsing, spec updates.
