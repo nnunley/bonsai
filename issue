@@ -1,9 +1,9 @@
 id: 6b318c0
 title: Scope analysis via locals.scm
-status: open
+status: closed
 priority: medium
 created: 2026-03-27T13:25:24Z
-updated: 2026-03-27T13:25:32Z
+updated: 2026-03-27T13:38:57Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
