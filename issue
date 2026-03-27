@@ -1,6 +1,6 @@
 id: f466121
 title: Parallel candidate testing with rayon
-status: open
+status: closed
 priority: medium
 created: 2026-03-27T02:57:19Z
 updated: 2026-03-27T05:36:49Z
