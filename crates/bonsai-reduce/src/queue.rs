@@ -91,10 +91,7 @@ fn count_leaves(node: &tree_sitter::Node) -> usize {
     count
 }
 
-fn collect_named_nodes(
-    cursor: &mut tree_sitter::TreeCursor,
-    heap: &mut BinaryHeap<QueueEntry>,
-) {
+fn collect_named_nodes(cursor: &mut tree_sitter::TreeCursor, heap: &mut BinaryHeap<QueueEntry>) {
     let node = cursor.node();
     if node.is_named() {
         heap.push(QueueEntry {

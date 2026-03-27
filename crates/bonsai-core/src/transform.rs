@@ -1,6 +1,6 @@
-use tree_sitter::{Node, Tree};
 use crate::supertype::SupertypeProvider;
 use crate::validity::Replacement;
+use tree_sitter::{Node, Tree};
 
 /// A transform proposes candidate replacements for tree nodes.
 /// Each candidate is a Replacement that the caller validates via reparsing.

@@ -34,22 +34,33 @@ fn test_reduce_python_keeps_target_line() {
     let test = ShellTest::new(
         vec!["grep".into(), "-q".into(), "x = 1".into()],
         Duration::from_secs(10),
-    ).unwrap();
+    )
+    .unwrap();
 
     let config = make_config("python", true);
     let result = reduce(source, &test, config, None);
 
-    assert!(result.source.len() < source.len(),
-        "Should reduce: {} -> {} bytes", source.len(), result.source.len());
+    assert!(
+        result.source.len() < source.len(),
+        "Should reduce: {} -> {} bytes",
+        source.len(),
+        result.source.len()
+    );
 
     let output = String::from_utf8_lossy(&result.source);
-    assert!(output.contains("x = 1"),
-        "Reduced output should contain 'x = 1': {}", output);
+    assert!(
+        output.contains("x = 1"),
+        "Reduced output should contain 'x = 1': {}",
+        output
+    );
 
     let lang = languages::get_language("python").unwrap();
     let tree = bonsai_core::parse::parse(&result.source, &lang).unwrap();
-    assert!(!bonsai_core::validity::tree_has_errors(&tree),
-        "Reduced output should be valid Python: {}", output);
+    assert!(
+        !bonsai_core::validity::tree_has_errors(&tree),
+        "Reduced output should be valid Python: {}",
+        output
+    );
 
     assert!(result.reductions > 0);
     assert!(result.tests_run > 0);
@@ -62,7 +73,8 @@ fn test_reduce_javascript() {
     let test = ShellTest::new(
         vec!["grep".into(), "-q".into(), "function foo".into()],
         Duration::from_secs(10),
-    ).unwrap();
+    )
+    .unwrap();
 
     let config = make_config("javascript", true);
     let result = reduce(source, &test, config, None);
@@ -79,16 +91,19 @@ fn test_reduce_output_is_valid_parse() {
     let test = ShellTest::new(
         vec!["grep".into(), "-q".into(), "x = 1".into()],
         Duration::from_secs(10),
-    ).unwrap();
+    )
+    .unwrap();
 
     let config = make_config("python", true);
     let result = reduce(source, &test, config, None);
 
     let lang = languages::get_language("python").unwrap();
     let tree = bonsai_core::parse::parse(&result.source, &lang).unwrap();
-    assert!(!bonsai_core::validity::tree_has_errors(&tree),
+    assert!(
+        !bonsai_core::validity::tree_has_errors(&tree),
         "Reduced output should parse cleanly: {}",
-        String::from_utf8_lossy(&result.source));
+        String::from_utf8_lossy(&result.source)
+    );
 }
 
 #[test]
@@ -99,7 +114,8 @@ fn test_reduce_with_no_supertypes() {
     let test = ShellTest::new(
         vec!["grep".into(), "-q".into(), "x = 1".into()],
         Duration::from_secs(10),
-    ).unwrap();
+    )
+    .unwrap();
 
     let config = ReducerConfig {
         language,
@@ -115,9 +131,12 @@ fn test_reduce_with_no_supertypes() {
 
     let result = reduce(source, &test, config, None);
 
-    assert!(result.source.len() < source.len(),
+    assert!(
+        result.source.len() < source.len(),
         "Should reduce even without supertypes: {} -> {}",
-        source.len(), result.source.len());
+        source.len(),
+        result.source.len()
+    );
     let output = String::from_utf8_lossy(&result.source);
     assert!(output.contains("x = 1"));
 }
@@ -129,7 +148,8 @@ fn test_reduce_caching_effectiveness() {
     let test = ShellTest::new(
         vec!["grep".into(), "-q".into(), "a = 1".into()],
         Duration::from_secs(10),
-    ).unwrap();
+    )
+    .unwrap();
 
     let config = make_config("python", true);
     let result = reduce(source, &test, config, None);

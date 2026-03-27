@@ -159,7 +159,7 @@ mod tests {
         let supertypes = lang.supertypes();
         let expr_supertype = supertypes.iter().find(|&&id| {
             lang.node_kind_for_id(id)
-                .map_or(false, |name| name.contains("expression"))
+                .is_some_and(|name| name.contains("expression"))
         });
 
         if let Some(&expr_id) = expr_supertype {

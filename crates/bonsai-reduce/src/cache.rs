@@ -122,13 +122,13 @@ mod tests {
         let mut cache = TestCache::new();
         cache.put(b"data", true);
 
-        cache.get(b"data");  // hit
-        cache.get(b"data");  // hit
+        cache.get(b"data"); // hit
+        cache.get(b"data"); // hit
         cache.get(b"other"); // miss
 
         assert_eq!(cache.hits(), 2);
         assert_eq!(cache.misses(), 1);
-        assert!((cache.hit_rate() - 2.0/3.0).abs() < 0.01);
+        assert!((cache.hit_rate() - 2.0 / 3.0).abs() < 0.01);
     }
 
     #[test]

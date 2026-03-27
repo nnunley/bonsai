@@ -736,7 +736,10 @@ mod tests {
         let result = reduce(source, &test, config, None);
         // Should return immediately with original source and tests_run=1
         assert_eq!(result.source, source);
-        assert_eq!(result.tests_run, 1, "Should run exactly one test (initial validation)");
+        assert_eq!(
+            result.tests_run, 1,
+            "Should run exactly one test (initial validation)"
+        );
         assert_eq!(result.reductions, 0);
     }
 
@@ -751,6 +754,9 @@ mod tests {
         let result = reduce(source, &test, config, None);
         // Should return immediately with original source
         assert_eq!(result.source, source);
-        assert_eq!(result.tests_run, 1, "Should run exactly one test (initial validation)");
+        assert_eq!(
+            result.tests_run, 1,
+            "Should run exactly one test (initial validation)"
+        );
     }
 }

@@ -26,7 +26,8 @@ pub struct Replacement {
 /// ```
 pub fn apply_replacement(source: &[u8], replacement: &Replacement) -> Vec<u8> {
     let mut result = Vec::with_capacity(
-        source.len() - (replacement.end_byte - replacement.start_byte) + replacement.new_bytes.len(),
+        source.len() - (replacement.end_byte - replacement.start_byte)
+            + replacement.new_bytes.len(),
     );
     result.extend_from_slice(&source[..replacement.start_byte]);
     result.extend_from_slice(&replacement.new_bytes);
@@ -319,7 +320,10 @@ mod tests {
             new_bytes: vec![],
         };
         let result = try_replacement(source, &replacement, &lang, None);
-        assert!(result.is_none(), "Removing condition from if should be invalid");
+        assert!(
+            result.is_none(),
+            "Removing condition from if should be invalid"
+        );
     }
 
     #[test]
@@ -376,11 +380,19 @@ mod tests {
         let source = b"x = 1";
 
         // end_byte > source.len()
-        let r = Replacement { start_byte: 0, end_byte: 100, new_bytes: vec![] };
+        let r = Replacement {
+            start_byte: 0,
+            end_byte: 100,
+            new_bytes: vec![],
+        };
         assert!(try_replacement(source, &r, &lang, None).is_none());
 
         // start_byte > end_byte
-        let r = Replacement { start_byte: 4, end_byte: 2, new_bytes: vec![] };
+        let r = Replacement {
+            start_byte: 4,
+            end_byte: 2,
+            new_bytes: vec![],
+        };
         assert!(try_replacement(source, &r, &lang, None).is_none());
     }
 
@@ -405,7 +417,11 @@ mod tests {
         assert!(initial.has_errors());
 
         // Delete "y = 1\n" (bytes 6..12) — this is AFTER the error, should work
-        let r = Replacement { start_byte: 6, end_byte: 12, new_bytes: vec![] };
+        let r = Replacement {
+            start_byte: 6,
+            end_byte: 12,
+            new_bytes: vec![],
+        };
         let result = try_replacement(source, &r, &lang, Some(&initial));
         assert!(result.is_some(), "Deleting after error should be accepted");
     }
@@ -420,10 +436,17 @@ mod tests {
         assert!(initial.has_errors());
 
         // Delete "y = 1\n" (bytes 0..6) — this is BEFORE the error, shifts it
-        let r = Replacement { start_byte: 0, end_byte: 6, new_bytes: vec![] };
+        let r = Replacement {
+            start_byte: 0,
+            end_byte: 6,
+            new_bytes: vec![],
+        };
         let result = try_replacement(source, &r, &lang, Some(&initial));
         // After fix: the error "x = )" still exists with same content, just shifted
         // So this should be accepted (no NEW errors)
-        assert!(result.is_some(), "Deleting before error should be accepted (error just shifted, same content)");
+        assert!(
+            result.is_some(),
+            "Deleting before error should be accepted (error just shifted, same content)"
+        );
     }
 }

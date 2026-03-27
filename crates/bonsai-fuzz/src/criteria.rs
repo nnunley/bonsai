@@ -70,14 +70,16 @@ impl InterestCriteria {
             InterestCheck::AnyNonZeroExit => {
                 matches!(result.exit_code, Some(code) if code != 0)
             }
-            InterestCheck::ExitCode(expected) => {
-                result.exit_code == Some(*expected)
-            }
+            InterestCheck::ExitCode(expected) => result.exit_code == Some(*expected),
             InterestCheck::AnySignal => {
                 #[cfg(unix)]
-                { result.signal.is_some() }
+                {
+                    result.signal.is_some()
+                }
                 #[cfg(not(unix))]
-                { false }
+                {
+                    false
+                }
             }
             InterestCheck::StderrPattern(pattern) => {
                 let stderr_str = String::from_utf8_lossy(&result.stderr);
@@ -144,8 +146,7 @@ mod tests {
 
     #[test]
     fn test_stderr_pattern() {
-        let criteria = InterestCriteria::none()
-            .with_stderr_pattern(Regex::new("panic").unwrap());
+        let criteria = InterestCriteria::none().with_stderr_pattern(Regex::new("panic").unwrap());
         assert!(!criteria.is_interesting(&make_result(Some(1), b"error occurred", false)));
         assert!(criteria.is_interesting(&make_result(Some(1), b"thread panicked", false)));
     }

@@ -15,9 +15,17 @@ Code review identified several gaps between the reducer spec and implementation:
 - Add no-supertype warning requirement
 - Add `locals` field parsing to build.rs grammar entry
 - Update validity spec to document bounds checking and content-based error tracking
+- Replace `InterestingnessTest::is_interesting` with `test() -> TestResult` enum (`Interesting`, `NotInteresting`, `Error(String)`)
+- Add error tolerance to reducer loop via `max_test_errors` config
+- `ShellTest::new` returns `Result<Self, String>` with arg validation
+- Remove `ProgressReporter::report_final` — CLI handles final summary directly
+- Encapsulate ctrlc handler in `InterruptFlag` struct that propagates registration errors
+- Remove `.unwrap()` on reparse — skip candidate on `None`
 
 ## Impact
 
+- **Breaking change**: `InterestingnessTest` trait changes from `is_interesting(&[u8]) -> bool` to `test(&[u8]) -> TestResult` — all implementors (`ShellTest`, `ContainsTest`, integration tests, doctests) must update
 - Reducer behavior change: fails fast if initial input is not interesting
+- Reducer behavior change: consecutive test errors trigger abort instead of silent `false`
 - Progress: users see periodic updates during long reductions, not just final summary
 - Build: `locals` field is parsed (no runtime behavior change yet — ScopeAnalysis is a separate change)

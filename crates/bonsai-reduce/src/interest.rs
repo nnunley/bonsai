@@ -104,7 +104,8 @@ mod tests {
         let test = ShellTest::new(
             vec!["grep".into(), "-q".into(), "hello".into()],
             Duration::from_secs(5),
-        ).unwrap();
+        )
+        .unwrap();
         assert_eq!(test.test(b"hello world\n"), TestResult::Interesting);
     }
 
@@ -113,7 +114,8 @@ mod tests {
         let test = ShellTest::new(
             vec!["grep".into(), "-q".into(), "hello".into()],
             Duration::from_secs(5),
-        ).unwrap();
+        )
+        .unwrap();
         assert_eq!(test.test(b"goodbye world\n"), TestResult::NotInteresting);
     }
 
@@ -122,11 +124,16 @@ mod tests {
         let test = ShellTest::new(
             vec!["sh".into(), "-c".into(), "sleep 60".into()],
             Duration::from_secs(1),
-        ).unwrap();
+        )
+        .unwrap();
         let start = std::time::Instant::now();
         let result = test.test(b"anything");
         let elapsed = start.elapsed();
-        assert_eq!(result, TestResult::NotInteresting, "Timeout should be NotInteresting");
+        assert_eq!(
+            result,
+            TestResult::NotInteresting,
+            "Timeout should be NotInteresting"
+        );
         assert!(elapsed < Duration::from_secs(3), "Should timeout quickly");
     }
 
@@ -135,23 +142,28 @@ mod tests {
         let test = ShellTest::new(
             vec!["grep".into(), "-q".into(), "hello".into()],
             Duration::from_secs(5),
-        ).unwrap();
+        )
+        .unwrap();
         assert_eq!(test.test(b"hello world\n"), TestResult::Interesting);
     }
 
     #[test]
     fn test_shell_test_spawn_error() {
-        let test = ShellTest::new(
-            vec!["/nonexistent/command".into()],
-            Duration::from_secs(5),
-        ).unwrap();
+        let test =
+            ShellTest::new(vec!["/nonexistent/command".into()], Duration::from_secs(5)).unwrap();
         let result = test.test(b"anything");
-        assert!(matches!(result, TestResult::Error(_)), "Spawn failure should return Error");
+        assert!(
+            matches!(result, TestResult::Error(_)),
+            "Spawn failure should return Error"
+        );
     }
 
     #[test]
     fn test_empty_command_rejected() {
         let result = ShellTest::new(vec![], Duration::from_secs(5));
-        assert!(result.is_err(), "Empty command should be rejected at construction");
+        assert!(
+            result.is_err(),
+            "Empty command should be rejected at construction"
+        );
     }
 }
