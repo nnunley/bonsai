@@ -1,0 +1,11 @@
+id: 77d2563
+title: No-supertype warning
+status: open
+priority: medium
+created: 2026-03-27T02:56:26Z
+updated: 2026-03-27T02:56:26Z
+author: Norman Nunley, Jr
+assignee: Norman Nunley, Jr
+hash_source: content
+
+In CLI, check if LanguageApiProvider::has_supertypes() is false and warn user.
