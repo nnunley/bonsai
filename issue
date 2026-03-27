@@ -3,9 +3,10 @@ title: Wire scope-aware transforms into CLI
 status: open
 priority: medium
 created: 2026-03-27T13:25:24Z
-updated: 2026-03-27T13:25:24Z
+updated: 2026-03-27T13:25:34Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
+depends_on: 2f5d72c
 
 When locals.scm is available, add DeadDefinitionTransform to the transform list. Load ScopeAnalysis per reduction iteration.
