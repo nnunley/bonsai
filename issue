@@ -7,6 +7,6 @@ updated: 2026-03-27T13:25:32Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
-parent_of: 8f3fe59
+parent_of: 8f3fe59,783bfbf
 
 Umbrella: implement ScopeAnalysis, UnifyIdentifiersTransform, DeadDefinitionTransform using tree-sitter locals.scm queries.
