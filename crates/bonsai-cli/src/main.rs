@@ -184,9 +184,9 @@ fn cmd_reduce(
     };
 
     // Determine language
-    let language = if let Some(name) = &lang {
+    let (lang_name, language) = if let Some(name) = &lang {
         match bonsai_core::languages::get_language(name) {
-            Some(l) => l,
+            Some(l) => (name.clone(), l),
             None => {
                 eprintln!("bonsai: unknown language '{}'. Supported languages:", name);
                 print_languages();
@@ -197,7 +197,7 @@ fn cmd_reduce(
         // Auto-detect from extension
         let ext = input.extension().and_then(|e| e.to_str()).unwrap_or("");
         match bonsai_core::languages::get_language_by_extension(ext) {
-            Some((_name, l)) => l,
+            Some((name, l)) => (name.to_string(), l),
             None => {
                 eprintln!(
                     "bonsai: cannot detect language from extension '.{}'. Use --lang or supported extensions:",
@@ -254,9 +254,15 @@ fn cmd_reduce(
         }
     });
 
-    // Set up provider
-    let provider = bonsai_core::supertype::LanguageApiProvider::new(&language);
-    if !provider.has_supertypes() {
+    // Set up provider: LanguageApiProvider → NodeTypesProvider (chain)
+    let api_provider = bonsai_core::supertype::LanguageApiProvider::new(&language);
+    let ntp_provider = bonsai_core::supertype::NodeTypesProvider::new(&language, &lang_name);
+    let has_supertypes = api_provider.has_supertypes() || ntp_provider.has_supertypes();
+    let provider = bonsai_core::supertype::ChainProvider::new(vec![
+        Box::new(api_provider),
+        Box::new(ntp_provider),
+    ]);
+    if !has_supertypes {
         eprintln!(
             "bonsai: note: grammar has no supertypes — only Delete transform will be effective. \
              Unwrap requires type compatibility information."
