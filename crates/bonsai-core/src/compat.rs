@@ -3,7 +3,7 @@
 //! Determines which node types can legally replace a given node in the tree,
 //! using supertype relationships from a [`SupertypeProvider`].
 
-use tree_sitter::{Language, Node};
+use tree_sitter::Node;
 
 use crate::supertype::SupertypeProvider;
 
@@ -14,7 +14,6 @@ use crate::supertype::SupertypeProvider;
 /// An empty list means only exact-type replacement or deletion is possible.
 pub fn compatible_replacements(
     node: &Node,
-    language: &Language,
     provider: &dyn SupertypeProvider,
 ) -> Vec<u16> {
     let kind_id = node.grammar_id();
@@ -31,10 +30,6 @@ pub fn compatible_replacements(
             }
         }
     }
-
-    // Suppress unused variable warning — language is kept in the signature
-    // for future use (e.g., validating kind IDs exist in the language).
-    let _ = language;
 
     result
 }
@@ -57,25 +52,22 @@ pub fn is_named_node(node: &Node) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{languages, parse, supertype::LanguageApiProvider};
+    use crate::{languages, parse};
 
     #[test]
     fn test_compatible_replacements_for_expression() {
         let lang = languages::get_language("python").unwrap();
-        let provider = LanguageApiProvider::new(&lang);
+        let provider = crate::supertype::LanguageApiProvider::new(&lang);
 
         let source = b"x = 1 + 2";
         let tree = parse::parse(source, &lang).unwrap();
         let root = tree.root_node();
 
-        // Find the binary_operator node (1 + 2)
-        // Navigate: module -> expression_statement -> assignment -> right side
-        // The tree structure may vary, so let's find a node that has compatible replacements
         let mut found_compatible = false;
         let mut cursor = root.walk();
         visit_all(&mut cursor, &mut |node: Node| {
             if node.is_named() {
-                let replacements = compatible_replacements(&node, &lang, &provider);
+                let replacements = compatible_replacements(&node, &provider);
                 if !replacements.is_empty() {
                     found_compatible = true;
                 }
@@ -96,11 +88,10 @@ mod tests {
         let tree = parse::parse(source, &lang).unwrap();
         let root = tree.root_node();
 
-        // With no supertype info, no replacements should be found
         let mut cursor = root.walk();
         visit_all(&mut cursor, &mut |node: Node| {
             if node.is_named() {
-                let replacements = compatible_replacements(&node, &lang, &provider);
+                let replacements = compatible_replacements(&node, &provider);
                 assert!(
                     replacements.is_empty(),
                     "Empty provider should yield no replacements"
