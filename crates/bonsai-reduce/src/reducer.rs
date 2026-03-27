@@ -84,6 +84,38 @@ pub fn reduce(
     // Cache: wrapped in Mutex for parallel mode, used directly for sequential
     let cache_mutex = Mutex::new(TestCache::new());
 
+    // Validate initial input passes the interestingness test
+    tests_run += 1;
+    match test.test(source) {
+        TestResult::Interesting => {} // Good — proceed with reduction
+        TestResult::NotInteresting => {
+            if let Some(p) = progress {
+                p.on_warning("initial input is not interesting — nothing to reduce");
+            }
+            let cache_hit_rate = cache_mutex.lock().unwrap().hit_rate();
+            return ReducerResult {
+                source: current_source,
+                tests_run,
+                reductions: 0,
+                cache_hit_rate,
+                elapsed: start.elapsed(),
+            };
+        }
+        TestResult::Error(msg) => {
+            if let Some(p) = progress {
+                p.on_warning(&format!("initial input test failed: {}", msg));
+            }
+            let cache_hit_rate = cache_mutex.lock().unwrap().hit_rate();
+            return ReducerResult {
+                source: current_source,
+                tests_run,
+                reductions: 0,
+                cache_hit_rate,
+                elapsed: start.elapsed(),
+            };
+        }
+    }
+
     // Parse initial tree
     let mut tree = match bonsai_core::parse::parse(&current_source, &config.language) {
         Some(t) => t,
@@ -580,8 +612,8 @@ mod tests {
         config.interrupted.store(true, Ordering::Relaxed);
 
         let result = reduce(source, &test, config, None);
-        // Should stop immediately without running tests
-        assert_eq!(result.tests_run, 0);
+        // Should stop after initial validation (1 test) without running reduction tests
+        assert_eq!(result.tests_run, 1);
     }
 
     /// Test that always returns Error.
@@ -691,5 +723,34 @@ mod tests {
             result1.source, result2.source,
             "Sequential reduction (jobs=1) should be deterministic"
         );
+    }
+
+    #[test]
+    fn test_initial_input_not_interesting() {
+        let lang = bonsai_core::languages::get_language("python").unwrap();
+        let source = b"x = 1\ny = 2";
+        // Test that NEVER matches — initial input fails
+        let test = ContainsTest::new(b"NEVER_MATCHES");
+        let config = make_config(lang, true);
+
+        let result = reduce(source, &test, config, None);
+        // Should return immediately with original source and tests_run=1
+        assert_eq!(result.source, source);
+        assert_eq!(result.tests_run, 1, "Should run exactly one test (initial validation)");
+        assert_eq!(result.reductions, 0);
+    }
+
+    #[test]
+    fn test_initial_input_error() {
+        let lang = bonsai_core::languages::get_language("python").unwrap();
+        let source = b"x = 1\ny = 2";
+        let test = AlwaysErrorTest;
+        let mut config = make_config(lang, true);
+        config.max_test_errors = 10; // high threshold so we don't hit it
+
+        let result = reduce(source, &test, config, None);
+        // Should return immediately with original source
+        assert_eq!(result.source, source);
+        assert_eq!(result.tests_run, 1, "Should run exactly one test (initial validation)");
     }
 }
