@@ -65,7 +65,8 @@ impl ProgressCallback for ProgressReporter {
         let now = Instant::now();
         {
             let mut last = self.last_report.lock().unwrap();
-            if self.verbosity == Verbosity::Normal && now.duration_since(*last) < self.min_interval {
+            if self.verbosity == Verbosity::Normal && now.duration_since(*last) < self.min_interval
+            {
                 return;
             }
             *last = now;
@@ -97,7 +98,10 @@ impl ProgressCallback for ProgressReporter {
         let _ = writeln!(
             io::stderr(),
             "  {} [{}-{}]: {}",
-            transform_name, start, end, status,
+            transform_name,
+            start,
+            end,
+            status,
         );
     }
 

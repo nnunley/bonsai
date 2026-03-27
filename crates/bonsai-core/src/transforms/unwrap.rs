@@ -1,7 +1,7 @@
-use tree_sitter::{Node, Tree};
 use crate::supertype::SupertypeProvider;
 use crate::transform::Transform;
 use crate::validity::Replacement;
+use tree_sitter::{Node, Tree};
 
 /// Proposes replacing a node with one of its children that has a compatible type.
 /// For example, replacing `(x + y)` (parenthesized_expression) with `x + y`.
@@ -95,7 +95,11 @@ mod tests {
         visit_all(&mut cursor, &mut |node: Node| {
             if node.is_named() {
                 let candidates = transform.candidates(&node, source, &tree, &provider);
-                assert!(candidates.is_empty(), "Empty provider should yield no unwrap candidates for {}", node.kind());
+                assert!(
+                    candidates.is_empty(),
+                    "Empty provider should yield no unwrap candidates for {}",
+                    node.kind()
+                );
             }
         });
     }

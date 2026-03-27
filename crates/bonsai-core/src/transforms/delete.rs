@@ -1,7 +1,7 @@
-use tree_sitter::{Node, Tree};
 use crate::supertype::SupertypeProvider;
 use crate::transform::Transform;
 use crate::validity::Replacement;
+use tree_sitter::{Node, Tree};
 
 /// Proposes deleting a named node by replacing its byte range with empty bytes.
 /// Does NOT check validity — the caller must validate via reparsing.
@@ -48,7 +48,8 @@ mod tests {
         // Find the else_clause
         let root = tree.root_node();
         let if_stmt = root.child(0).unwrap(); // if_statement
-        let else_clause = if_stmt.children(&mut if_stmt.walk())
+        let else_clause = if_stmt
+            .children(&mut if_stmt.walk())
             .find(|c| c.kind() == "else_clause");
 
         if let Some(else_node) = else_clause {
@@ -77,7 +78,10 @@ mod tests {
 
         // Validate the replacement produces valid Python
         let result = validity::try_replacement(source, &candidates[0], &lang, None);
-        assert!(result.is_some(), "Deleting second statement should be valid");
+        assert!(
+            result.is_some(),
+            "Deleting second statement should be valid"
+        );
     }
 
     #[test]
@@ -95,11 +99,17 @@ mod tests {
         visit_all(&mut cursor, &mut |node: Node| {
             if !node.is_named() {
                 let candidates = transform.candidates(&node, source, &tree, &provider);
-                assert!(candidates.is_empty(), "Anonymous nodes should not get delete candidates");
+                assert!(
+                    candidates.is_empty(),
+                    "Anonymous nodes should not get delete candidates"
+                );
                 found_anonymous = true;
             }
         });
-        assert!(found_anonymous, "Should have found at least one anonymous node");
+        assert!(
+            found_anonymous,
+            "Should have found at least one anonymous node"
+        );
     }
 
     use crate::test_utils::visit_all;

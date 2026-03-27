@@ -50,12 +50,20 @@ impl FuzzTarget {
         } else {
             InputMode::Stdin
         };
-        Self { command, input_mode, timeout }
+        Self {
+            command,
+            input_mode,
+            timeout,
+        }
     }
 
     /// Create with explicit input mode.
     pub fn with_input_mode(command: Vec<String>, input_mode: InputMode, timeout: Duration) -> Self {
-        Self { command, input_mode, timeout }
+        Self {
+            command,
+            input_mode,
+            timeout,
+        }
     }
 
     /// Run the target with the given input and return the result.
@@ -70,7 +78,11 @@ impl FuzzTarget {
     fn run_stdin(&self, input: &[u8]) -> Result<TargetResult, TargetError> {
         let (program, args) = match self.command.split_first() {
             Some(pair) => pair,
-            None => return Err(TargetError { message: "command is empty".into() }),
+            None => {
+                return Err(TargetError {
+                    message: "command is empty".into(),
+                })
+            }
         };
 
         let mut child = Command::new(program)
@@ -79,7 +91,9 @@ impl FuzzTarget {
             .stdout(Stdio::null())
             .stderr(Stdio::piped())
             .spawn()
-            .map_err(|e| TargetError { message: format!("failed to spawn '{}': {e}", program) })?;
+            .map_err(|e| TargetError {
+                message: format!("failed to spawn '{}': {e}", program),
+            })?;
 
         // Write input to stdin then close it
         if let Some(mut stdin) = child.stdin.take() {
@@ -118,28 +132,39 @@ impl FuzzTarget {
                     signal: None,
                 })
             }
-            Err(e) => Err(TargetError { message: format!("failed to wait on process: {e}") }),
+            Err(e) => Err(TargetError {
+                message: format!("failed to wait on process: {e}"),
+            }),
         }
     }
 
-    fn run_with_file(&self, input: &[u8], replace_placeholder: bool) -> Result<TargetResult, TargetError> {
-        let mut tmp = NamedTempFile::new()
-            .map_err(|e| TargetError { message: format!("failed to create temp file: {e}") })?;
-        tmp.write_all(input)
-            .map_err(|e| TargetError { message: format!("failed to write temp file: {e}") })?;
-        tmp.flush()
-            .map_err(|e| TargetError { message: format!("failed to flush temp file: {e}") })?;
+    fn run_with_file(
+        &self,
+        input: &[u8],
+        replace_placeholder: bool,
+    ) -> Result<TargetResult, TargetError> {
+        let mut tmp = NamedTempFile::new().map_err(|e| TargetError {
+            message: format!("failed to create temp file: {e}"),
+        })?;
+        tmp.write_all(input).map_err(|e| TargetError {
+            message: format!("failed to write temp file: {e}"),
+        })?;
+        tmp.flush().map_err(|e| TargetError {
+            message: format!("failed to flush temp file: {e}"),
+        })?;
         let tmp_path = tmp.path().to_string_lossy().to_string();
 
         let (program, args) = match self.command.split_first() {
             Some(pair) => pair,
-            None => return Err(TargetError { message: "command is empty".into() }),
+            None => {
+                return Err(TargetError {
+                    message: "command is empty".into(),
+                })
+            }
         };
 
         let resolved_args: Vec<String> = if replace_placeholder {
-            args.iter()
-                .map(|a| a.replace("@@", &tmp_path))
-                .collect()
+            args.iter().map(|a| a.replace("@@", &tmp_path)).collect()
         } else {
             let mut a: Vec<String> = args.to_vec();
             a.push(tmp_path);
@@ -152,7 +177,9 @@ impl FuzzTarget {
             .stdout(Stdio::null())
             .stderr(Stdio::piped())
             .spawn()
-            .map_err(|e| TargetError { message: format!("failed to spawn '{}': {e}", program) })?;
+            .map_err(|e| TargetError {
+                message: format!("failed to spawn '{}': {e}", program),
+            })?;
 
         match child.wait_timeout(self.timeout) {
             Ok(Some(status)) => {
@@ -186,7 +213,9 @@ impl FuzzTarget {
                     signal: None,
                 })
             }
-            Err(e) => Err(TargetError { message: format!("failed to wait on process: {e}") }),
+            Err(e) => Err(TargetError {
+                message: format!("failed to wait on process: {e}"),
+            }),
         }
     }
 }
@@ -203,10 +232,7 @@ mod tests {
 
     #[test]
     fn test_stdin_mode() {
-        let target = FuzzTarget::new(
-            vec!["cat".into()],
-            Duration::from_secs(5),
-        );
+        let target = FuzzTarget::new(vec!["cat".into()], Duration::from_secs(5));
         assert!(matches!(target.input_mode, InputMode::Stdin));
     }
 
@@ -221,30 +247,21 @@ mod tests {
 
     #[test]
     fn test_run_stdin_success() {
-        let target = FuzzTarget::new(
-            vec!["cat".into()],
-            Duration::from_secs(5),
-        );
+        let target = FuzzTarget::new(vec!["cat".into()], Duration::from_secs(5));
         let result = target.run(b"hello").unwrap();
         assert_eq!(result.exit_code, Some(0));
     }
 
     #[test]
     fn test_run_stdin_failure() {
-        let target = FuzzTarget::new(
-            vec!["false".into()],
-            Duration::from_secs(5),
-        );
+        let target = FuzzTarget::new(vec!["false".into()], Duration::from_secs(5));
         let result = target.run(b"hello").unwrap();
         assert_ne!(result.exit_code, Some(0));
     }
 
     #[test]
     fn test_run_with_arg_replace() {
-        let target = FuzzTarget::new(
-            vec!["cat".into(), "@@".into()],
-            Duration::from_secs(5),
-        );
+        let target = FuzzTarget::new(vec!["cat".into(), "@@".into()], Duration::from_secs(5));
         let result = target.run(b"test content").unwrap();
         assert_eq!(result.exit_code, Some(0));
     }
@@ -269,25 +286,23 @@ mod tests {
 
     #[test]
     fn test_spawn_error() {
-        let target = FuzzTarget::new(
-            vec!["/nonexistent/command".into()],
-            Duration::from_secs(5),
-        );
+        let target = FuzzTarget::new(vec!["/nonexistent/command".into()], Duration::from_secs(5));
         let result = target.run(b"anything");
         assert!(result.is_err(), "Nonexistent command should return Err");
     }
 
     #[test]
     fn test_stdin_timeout() {
-        let target = FuzzTarget::new(
-            vec!["sleep".into(), "60".into()],
-            Duration::from_secs(1),
-        );
+        let target = FuzzTarget::new(vec!["sleep".into(), "60".into()], Duration::from_secs(1));
         let start = std::time::Instant::now();
         let result = target.run(b"anything").unwrap();
         let elapsed = start.elapsed();
         assert!(result.timed_out, "Should have timed out");
-        assert!(elapsed < Duration::from_secs(3), "Should timeout quickly, took {:?}", elapsed);
+        assert!(
+            elapsed < Duration::from_secs(3),
+            "Should timeout quickly, took {:?}",
+            elapsed
+        );
     }
 
     #[test]
@@ -301,6 +316,10 @@ mod tests {
         let result = target.run(b"anything").unwrap();
         let elapsed = start.elapsed();
         assert!(result.timed_out, "Should have timed out");
-        assert!(elapsed < Duration::from_secs(3), "Should timeout quickly, took {:?}", elapsed);
+        assert!(
+            elapsed < Duration::from_secs(3),
+            "Should timeout quickly, took {:?}",
+            elapsed
+        );
     }
 }

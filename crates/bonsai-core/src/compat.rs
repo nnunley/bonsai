@@ -12,10 +12,7 @@ use crate::supertype::SupertypeProvider;
 ///
 /// Returns a list of kind IDs (not including the node's own kind).
 /// An empty list means only exact-type replacement or deletion is possible.
-pub fn compatible_replacements(
-    node: &Node,
-    provider: &dyn SupertypeProvider,
-) -> Vec<u16> {
+pub fn compatible_replacements(node: &Node, provider: &dyn SupertypeProvider) -> Vec<u16> {
     let kind_id = node.grammar_id();
     let mut result = Vec::new();
 

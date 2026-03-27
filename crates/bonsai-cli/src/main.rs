@@ -26,7 +26,10 @@ impl InterruptFlag {
 }
 
 #[derive(Parser)]
-#[command(name = "bonsai", about = "Tree-sitter based test case reducer and fuzzer")]
+#[command(
+    name = "bonsai",
+    about = "Tree-sitter based test case reducer and fuzzer"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -241,9 +244,14 @@ fn cmd_reduce(
 
     // Set up interrupt handler
     let interrupt = InterruptFlag::new().unwrap_or_else(|e| {
-        eprintln!("bonsai: warning: failed to register interrupt handler: {}", e);
+        eprintln!(
+            "bonsai: warning: failed to register interrupt handler: {}",
+            e
+        );
         // Fall back to an unregistered flag — Ctrl-C won't gracefully stop reduction
-        InterruptFlag { flag: Arc::new(AtomicBool::new(false)) }
+        InterruptFlag {
+            flag: Arc::new(AtomicBool::new(false)),
+        }
     });
 
     // Set up provider
@@ -280,7 +288,7 @@ fn cmd_reduce(
 
     // Report final summary
     if verbosity != bonsai_reduce::progress::Verbosity::Quiet {
-        let percentage = if source.len() > 0 {
+        let percentage = if !source.is_empty() {
             100.0 * (1.0 - result.source.len() as f64 / source.len() as f64)
         } else {
             0.0

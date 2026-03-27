@@ -9,7 +9,11 @@ fn test_parse_empty_source_all_grammars() {
     for info in languages::list_languages() {
         let lang = languages::get_language(info.name).unwrap();
         let tree = parse::parse(b"", &lang);
-        assert!(tree.is_some(), "Empty source should parse for {}", info.name);
+        assert!(
+            tree.is_some(),
+            "Empty source should parse for {}",
+            info.name
+        );
     }
 }
 
@@ -45,7 +49,7 @@ fn test_delete_transform_all_grammars() {
 
     for (lang_name, source) in sources {
         let lang = languages::get_language(lang_name).unwrap();
-        let tree = parse::parse(*source, &lang).unwrap();
+        let tree = parse::parse(source, &lang).unwrap();
         let provider = supertype::EmptyProvider;
 
         // At least some named nodes should have delete candidates
@@ -81,7 +85,10 @@ fn test_grammar_with_no_supertypes_still_works() {
     let root = tree.root_node();
     let second_stmt = root.child(1).unwrap();
     let candidates = delete.candidates(&second_stmt, source, &tree, &provider);
-    assert!(!candidates.is_empty(), "Delete should work without supertypes");
+    assert!(
+        !candidates.is_empty(),
+        "Delete should work without supertypes"
+    );
 
     // And the deletion should produce valid code
     let result = validity::try_replacement(source, &candidates[0], &lang, None);

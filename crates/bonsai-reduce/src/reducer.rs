@@ -1,11 +1,12 @@
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tree_sitter::Language;
 
 use bonsai_core::supertype::SupertypeProvider;
 use bonsai_core::transform::Transform;
 use bonsai_core::validity;
+use rayon::prelude::*;
 
 use crate::cache::TestCache;
 use crate::interest::{InterestingnessTest, TestResult};
@@ -24,10 +25,10 @@ pub struct ReducerConfig {
     pub max_tests: usize,
     /// Maximum wall-clock time (Duration::ZERO = unlimited).
     pub max_time: Duration,
-    /// Number of parallel test workers (1 = sequential/deterministic).
-    ///
-    /// NOTE: `jobs` is accepted but parallelism is not yet implemented.
-    /// All reduction runs currently execute sequentially regardless of this value.
+    /// Number of parallel test workers.
+    /// With jobs=1: sequential, deterministic.
+    /// With jobs>1: candidates are tested in parallel using rayon, first interesting
+    /// result wins. Results may be non-deterministic due to scheduling.
     pub jobs: usize,
     /// If true, reject any ERROR/MISSING nodes. If false, only reject NEW errors.
     pub strict: bool,
@@ -64,10 +65,24 @@ pub fn reduce(
 ) -> ReducerResult {
     let start = Instant::now();
     let mut current_source = source.to_vec();
-    let mut cache = TestCache::new();
     let mut tests_run: usize = 0;
     let mut reductions: usize = 0;
     let mut consecutive_errors: usize = 0;
+
+    // Build thread pool for parallel mode
+    let pool = if config.jobs > 1 {
+        Some(
+            rayon::ThreadPoolBuilder::new()
+                .num_threads(config.jobs)
+                .build()
+                .expect("failed to create rayon thread pool"),
+        )
+    } else {
+        None
+    };
+
+    // Cache: wrapped in Mutex for parallel mode, used directly for sequential
+    let cache_mutex = Mutex::new(TestCache::new());
 
     // Parse initial tree
     let mut tree = match bonsai_core::parse::parse(&current_source, &config.language) {
@@ -138,108 +153,174 @@ pub fn reduce(
             ));
         }
 
-        // Test candidates
+        // Validate candidates: apply replacement, reparse, check for errors
+        // This is cheap (no subprocess) and uses only immutable state
+        let valid_candidates: Vec<Vec<u8>> = candidates
+            .iter()
+            .filter_map(|candidate| {
+                validity::try_replacement(
+                    &current_source,
+                    candidate,
+                    &config.language,
+                    initial_errors.as_ref(),
+                )
+            })
+            .collect();
+
+        // Test candidates — sequential or parallel depending on jobs
         let mut accepted = false;
-        for candidate in &candidates {
-            // Check termination
-            if config.interrupted.load(Ordering::Relaxed) {
-                break;
-            }
-            if config.max_tests > 0 && tests_run >= config.max_tests {
-                break;
-            }
-            if config.max_time > Duration::ZERO && start.elapsed() >= config.max_time {
-                break;
-            }
+        let winning_source = if pool.is_some() {
+            // Parallel path: test all valid candidates concurrently
+            let atomic_tests = AtomicUsize::new(0);
+            let atomic_errors = AtomicUsize::new(consecutive_errors);
+            let abort_flag = AtomicBool::new(false);
 
-            // Validate: apply replacement, reparse, check for errors
-            let new_source = match validity::try_replacement(
-                &current_source,
-                candidate,
-                &config.language,
-                initial_errors.as_ref(),
-            ) {
-                Some(s) => s,
-                None => continue, // Invalid replacement
-            };
-
-            // Check cache
-            if let Some(cached) = cache.get(&new_source) {
-                if !cached {
-                    continue; // Known not interesting
-                }
-                // Known interesting -- accept
-                current_source = new_source;
-                match bonsai_core::parse::parse(&current_source, &config.language) {
-                    Some(new_tree) => {
-                        tree = new_tree;
-                        if !config.strict {
-                            initial_errors = {
-                                let errors = validity::ErrorSet::from_tree(&tree, &current_source);
-                                if errors.is_empty() { None } else { Some(errors) }
-                            };
+            let winner = pool.as_ref().unwrap().install(|| {
+                valid_candidates
+                    .par_iter()
+                    .find_first(|new_source| {
+                        // Check termination
+                        if abort_flag.load(Ordering::Relaxed)
+                            || config.interrupted.load(Ordering::Relaxed)
+                        {
+                            return false;
                         }
-                        queue.rebuild(&tree);
-                        reductions += 1;
-                        accepted = true;
+
+                        // Check cache
+                        {
+                            let mut cache = cache_mutex.lock().unwrap();
+                            if let Some(cached) = cache.get(new_source) {
+                                return cached;
+                            }
+                        }
+
+                        // Run test
+                        atomic_tests.fetch_add(1, Ordering::Relaxed);
+                        let result = test.test(new_source);
+                        match &result {
+                            TestResult::Error(msg) => {
+                                let errs = atomic_errors.fetch_add(1, Ordering::Relaxed) + 1;
+                                if let Some(p) = progress {
+                                    p.on_warning(&format!("test error: {}", msg));
+                                }
+                                if errs > config.max_test_errors {
+                                    abort_flag.store(true, Ordering::Relaxed);
+                                }
+                                false
+                            }
+                            TestResult::Interesting => {
+                                atomic_errors.store(0, Ordering::Relaxed);
+                                let mut cache = cache_mutex.lock().unwrap();
+                                cache.put(new_source, true);
+                                true
+                            }
+                            TestResult::NotInteresting => {
+                                atomic_errors.store(0, Ordering::Relaxed);
+                                let mut cache = cache_mutex.lock().unwrap();
+                                cache.put(new_source, false);
+                                false
+                            }
+                        }
+                    })
+                    .cloned()
+            });
+
+            tests_run += atomic_tests.load(Ordering::Relaxed);
+            consecutive_errors = atomic_errors.load(Ordering::Relaxed);
+            winner
+        } else {
+            // Sequential path: test one at a time
+            let mut winner = None;
+            for new_source in &valid_candidates {
+                // Check termination
+                if config.interrupted.load(Ordering::Relaxed) {
+                    break;
+                }
+                if config.max_tests > 0 && tests_run >= config.max_tests {
+                    break;
+                }
+                if config.max_time > Duration::ZERO && start.elapsed() >= config.max_time {
+                    break;
+                }
+                if consecutive_errors > config.max_test_errors {
+                    break;
+                }
+
+                // Check cache
+                {
+                    let mut cache = cache_mutex.lock().unwrap();
+                    if let Some(cached) = cache.get(new_source) {
+                        if cached {
+                            winner = Some(new_source.clone());
+                            break;
+                        }
+                        continue;
                     }
-                    None => {
+                }
+
+                // Run test
+                tests_run += 1;
+                let test_result = test.test(new_source);
+                match &test_result {
+                    TestResult::Error(msg) => {
+                        consecutive_errors += 1;
                         if let Some(p) = progress {
-                            p.on_warning("reparse failed after accepted candidate, skipping");
+                            p.on_warning(&format!("test error: {}", msg));
                         }
-                        current_source = source.to_vec();
+                        if consecutive_errors > config.max_test_errors {
+                            if let Some(p) = progress {
+                                p.on_warning(&format!(
+                                    "aborting after {} consecutive test errors",
+                                    consecutive_errors
+                                ));
+                            }
+                            break;
+                        }
+                        continue;
+                    }
+                    _ => {
+                        consecutive_errors = 0;
                     }
                 }
-                break;
+                let interesting = matches!(test_result, TestResult::Interesting);
+                {
+                    let mut cache = cache_mutex.lock().unwrap();
+                    cache.put(new_source, interesting);
+                }
+                if interesting {
+                    winner = Some(new_source.clone());
+                    break;
+                }
             }
+            winner
+        };
 
-            // Run interestingness test
-            tests_run += 1;
-            let test_result = test.test(&new_source);
-            match &test_result {
-                TestResult::Error(msg) => {
-                    consecutive_errors += 1;
+        // Accept winning candidate
+        if let Some(new_source) = winning_source {
+            current_source = new_source;
+            match bonsai_core::parse::parse(&current_source, &config.language) {
+                Some(new_tree) => {
+                    tree = new_tree;
+                    if !config.strict {
+                        initial_errors = {
+                            let errors = validity::ErrorSet::from_tree(&tree, &current_source);
+                            if errors.is_empty() {
+                                None
+                            } else {
+                                Some(errors)
+                            }
+                        };
+                    }
+                    queue.rebuild(&tree);
+                    reductions += 1;
+                    accepted = true;
+                }
+                None => {
                     if let Some(p) = progress {
-                        p.on_warning(&format!("test error: {}", msg));
+                        p.on_warning("reparse failed after accepted candidate, skipping");
                     }
-                    if consecutive_errors > config.max_test_errors {
-                        if let Some(p) = progress {
-                            p.on_warning(&format!("aborting after {} consecutive test errors", consecutive_errors));
-                        }
-                        break;
-                    }
-                    continue;
+                    current_source = source.to_vec();
                 }
-                _ => {
-                    consecutive_errors = 0;
-                }
-            }
-            let interesting = matches!(test_result, TestResult::Interesting);
-            cache.put(&new_source, interesting);
-
-            if interesting {
-                current_source = new_source;
-                match bonsai_core::parse::parse(&current_source, &config.language) {
-                    Some(new_tree) => {
-                        tree = new_tree;
-                        if !config.strict {
-                            initial_errors = {
-                                let errors = validity::ErrorSet::from_tree(&tree, &current_source);
-                                if errors.is_empty() { None } else { Some(errors) }
-                            };
-                        }
-                        queue.rebuild(&tree);
-                        reductions += 1;
-                        accepted = true;
-                    }
-                    None => {
-                        if let Some(p) = progress {
-                            p.on_warning("reparse failed after accepted candidate, skipping");
-                        }
-                        current_source = source.to_vec();
-                    }
-                }
-                break;
             }
         }
 
@@ -250,7 +331,7 @@ pub fn reduce(
                 current_size: current_source.len(),
                 tests_run,
                 reductions,
-                cache_hit_rate: cache.hit_rate(),
+                cache_hit_rate: cache_mutex.lock().unwrap().hit_rate(),
             });
         }
 
@@ -270,11 +351,12 @@ pub fn reduce(
         }
     }
 
+    let cache_hit_rate = cache_mutex.lock().unwrap().hit_rate();
     ReducerResult {
         source: current_source,
         tests_run,
         reductions,
-        cache_hit_rate: cache.hit_rate(),
+        cache_hit_rate,
         elapsed: start.elapsed(),
     }
 }
@@ -481,8 +563,11 @@ mod tests {
         let result = reduce(source, &test, config, None);
 
         // The final result must pass the test
-        assert_eq!(test.test(&result.source), TestResult::Interesting,
-            "Final output must pass the interestingness test");
+        assert_eq!(
+            test.test(&result.source),
+            TestResult::Interesting,
+            "Final output must pass the interestingness test"
+        );
     }
 
     #[test]
@@ -519,7 +604,11 @@ mod tests {
         let result = reduce(source, &test, config, None);
         // Should abort after 2 consecutive errors, returning original source
         assert_eq!(result.source, source);
-        assert!(result.tests_run <= 3, "Should abort quickly, ran {} tests", result.tests_run);
+        assert!(
+            result.tests_run <= 3,
+            "Should abort quickly, ran {} tests",
+            result.tests_run
+        );
     }
 
     /// Mock progress callback that counts invocations.
@@ -529,7 +618,9 @@ mod tests {
 
     impl CountingCallback {
         fn new() -> Self {
-            Self { updates: AtomicUsize::new(0) }
+            Self {
+                updates: AtomicUsize::new(0),
+            }
         }
     }
 
@@ -555,6 +646,50 @@ mod tests {
         assert!(
             callback.updates.load(Ordering::Relaxed) > 0,
             "Progress callback should have been invoked"
+        );
+    }
+
+    #[test]
+    fn test_parallel_reduction_produces_correct_result() {
+        let lang = bonsai_core::languages::get_language("python").unwrap();
+        let source = b"x = 1\ny = 2\nz = 3\nw = 4\n";
+        let test = ContainsTest::new(b"x = 1");
+        let mut config = make_config(lang, true);
+        config.jobs = 2;
+
+        let result = reduce(source, &test, config, None);
+
+        // Should reduce
+        assert!(
+            result.source.len() < source.len(),
+            "Parallel reduction should produce smaller output: {} vs {}",
+            result.source.len(),
+            source.len()
+        );
+        // Should preserve the interesting property
+        assert!(
+            result.source.windows(5).any(|w| w == b"x = 1"),
+            "Should still contain 'x = 1': {:?}",
+            String::from_utf8_lossy(&result.source)
+        );
+        assert!(result.reductions > 0);
+    }
+
+    #[test]
+    fn test_sequential_is_deterministic() {
+        let lang = bonsai_core::languages::get_language("python").unwrap();
+        let source = b"x = 1\ny = 2\nz = 3";
+        let test1 = ContainsTest::new(b"x = 1");
+        let test2 = ContainsTest::new(b"x = 1");
+        let config1 = make_config(lang.clone(), true);
+        let config2 = make_config(lang, true);
+
+        let result1 = reduce(source, &test1, config1, None);
+        let result2 = reduce(source, &test2, config2, None);
+
+        assert_eq!(
+            result1.source, result2.source,
+            "Sequential reduction (jobs=1) should be deterministic"
         );
     }
 }

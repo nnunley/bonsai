@@ -104,7 +104,11 @@ fn generate_languages_rs(out_dir: &Path, languages: &[LanguageEntry]) {
     writeln!(code).unwrap();
 
     // get_language function
-    writeln!(code, "pub fn get_language(name: &str) -> Option<Language> {{").unwrap();
+    writeln!(
+        code,
+        "pub fn get_language(name: &str) -> Option<Language> {{"
+    )
+    .unwrap();
     writeln!(code, "    match name {{").unwrap();
     for lang in languages {
         writeln!(
