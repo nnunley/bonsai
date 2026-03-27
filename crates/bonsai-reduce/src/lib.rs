@@ -11,14 +11,18 @@
 //! use bonsai_core::transforms::delete::DeleteTransform;
 //! use bonsai_core::transforms::unwrap::UnwrapTransform;
 //! use bonsai_reduce::reducer::{reduce, ReducerConfig};
-//! use bonsai_reduce::InterestingnessTest;
+//! use bonsai_reduce::{InterestingnessTest, TestResult};
 //!
 //! // Define what makes an input "interesting" (still triggers the bug)
 //! struct ContainsPattern(Vec<u8>);
 //!
 //! impl InterestingnessTest for ContainsPattern {
-//!     fn is_interesting(&self, input: &[u8]) -> bool {
-//!         input.windows(self.0.len()).any(|w| w == self.0.as_slice())
+//!     fn test(&self, input: &[u8]) -> TestResult {
+//!         if input.windows(self.0.len()).any(|w| w == self.0.as_slice()) {
+//!             TestResult::Interesting
+//!         } else {
+//!             TestResult::NotInteresting
+//!         }
 //!     }
 //! }
 //!
@@ -49,7 +53,7 @@
 //!
 //! ```no_run
 //! use std::time::Duration;
-//! use bonsai_reduce::{ShellTest, InterestingnessTest};
+//! use bonsai_reduce::{ShellTest, InterestingnessTest, TestResult};
 //!
 //! // "grep -q 'error'" exits 0 when the input contains "error"
 //! let test = ShellTest::new(
@@ -58,8 +62,8 @@
 //! );
 //!
 //! // The test writes input to a temp file and passes the path as an argument
-//! assert!(test.is_interesting(b"an error occurred\n"));
-//! assert!(!test.is_interesting(b"all good\n"));
+//! assert_eq!(test.test(b"an error occurred\n"), TestResult::Interesting);
+//! assert_eq!(test.test(b"all good\n"), TestResult::NotInteresting);
 //! ```
 
 pub mod cache;
@@ -70,5 +74,5 @@ pub mod queue;
 pub mod reducer;
 
 pub use cache::TestCache;
-pub use interest::{InterestingnessTest, ShellTest};
+pub use interest::{InterestingnessTest, ShellTest, TestResult};
 pub use output::{write_output, OutputTarget};

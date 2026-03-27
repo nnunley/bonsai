@@ -8,7 +8,7 @@ use bonsai_core::transform::Transform;
 use bonsai_core::validity;
 
 use crate::cache::TestCache;
-use crate::interest::InterestingnessTest;
+use crate::interest::{InterestingnessTest, TestResult};
 use crate::queue::ReductionQueue;
 
 /// Configuration for a reduction run.
@@ -178,7 +178,8 @@ pub fn reduce(
 
             // Run interestingness test
             tests_run += 1;
-            let interesting = test.is_interesting(&new_source);
+            let test_result = test.test(&new_source);
+            let interesting = matches!(test_result, TestResult::Interesting);
             cache.put(&new_source, interesting);
 
             if interesting {
@@ -206,8 +207,9 @@ pub fn reduce(
 
     // Final verification: re-run the interestingness test to catch any cache collision corruption
     if !current_source.is_empty() && current_source != source {
-        if !test.is_interesting(&current_source) {
-            // Cache collision corrupted the result — fall back to original
+        let final_result = test.test(&current_source);
+        if !matches!(final_result, TestResult::Interesting) {
+            // Cache collision corrupted the result or test error — fall back to original
             current_source = source.to_vec();
             reductions = 0;
         }
@@ -288,15 +290,20 @@ mod tests {
     }
 
     impl InterestingnessTest for ContainsTest {
-        fn is_interesting(&self, input: &[u8]) -> bool {
+        fn test(&self, input: &[u8]) -> TestResult {
             self.call_count.fetch_add(1, Ordering::Relaxed);
             // Check if pattern is a substring
             if self.pattern.is_empty() {
-                return true;
+                return TestResult::Interesting;
             }
-            input
+            if input
                 .windows(self.pattern.len())
                 .any(|w| w == self.pattern.as_slice())
+            {
+                TestResult::Interesting
+            } else {
+                TestResult::NotInteresting
+            }
         }
     }
 
@@ -418,7 +425,7 @@ mod tests {
         let result = reduce(source, &test, config);
 
         // The final result must pass the test
-        assert!(test.is_interesting(&result.source),
+        assert_eq!(test.test(&result.source), TestResult::Interesting,
             "Final output must pass the interestingness test");
     }
 
