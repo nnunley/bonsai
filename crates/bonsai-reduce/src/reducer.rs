@@ -168,17 +168,24 @@ pub fn reduce(
                 }
                 // Known interesting -- accept
                 current_source = new_source;
-                tree = bonsai_core::parse::parse(&current_source, &config.language).unwrap();
-                // Update initial_errors for lenient mode
-                if !config.strict {
-                    initial_errors = {
-                        let errors = validity::ErrorSet::from_tree(&tree, &current_source);
-                        if errors.is_empty() { None } else { Some(errors) }
-                    };
+                match bonsai_core::parse::parse(&current_source, &config.language) {
+                    Some(new_tree) => {
+                        tree = new_tree;
+                        if !config.strict {
+                            initial_errors = {
+                                let errors = validity::ErrorSet::from_tree(&tree, &current_source);
+                                if errors.is_empty() { None } else { Some(errors) }
+                            };
+                        }
+                        queue.rebuild(&tree);
+                        reductions += 1;
+                        accepted = true;
+                    }
+                    None => {
+                        eprintln!("bonsai: warning: reparse failed after accepted candidate, skipping");
+                        current_source = source.to_vec();
+                    }
                 }
-                queue.rebuild(&tree);
-                reductions += 1;
-                accepted = true;
                 break;
             }
 
@@ -204,17 +211,24 @@ pub fn reduce(
 
             if interesting {
                 current_source = new_source;
-                tree = bonsai_core::parse::parse(&current_source, &config.language).unwrap();
-                // Update initial_errors for lenient mode
-                if !config.strict {
-                    initial_errors = {
-                        let errors = validity::ErrorSet::from_tree(&tree, &current_source);
-                        if errors.is_empty() { None } else { Some(errors) }
-                    };
+                match bonsai_core::parse::parse(&current_source, &config.language) {
+                    Some(new_tree) => {
+                        tree = new_tree;
+                        if !config.strict {
+                            initial_errors = {
+                                let errors = validity::ErrorSet::from_tree(&tree, &current_source);
+                                if errors.is_empty() { None } else { Some(errors) }
+                            };
+                        }
+                        queue.rebuild(&tree);
+                        reductions += 1;
+                        accepted = true;
+                    }
+                    None => {
+                        eprintln!("bonsai: warning: reparse failed after accepted candidate, skipping");
+                        current_source = source.to_vec();
+                    }
                 }
-                queue.rebuild(&tree);
-                reductions += 1;
-                accepted = true;
                 break;
             }
         }
