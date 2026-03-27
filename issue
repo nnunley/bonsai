@@ -3,9 +3,10 @@ title: Parse node-types.json in build.rs
 status: open
 priority: medium
 created: 2026-03-27T13:13:48Z
-updated: 2026-03-27T13:13:48Z
+updated: 2026-03-27T13:13:55Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
+blocks: 579de99
 
 Add serde_json build dep. Parse node-types.json for each grammar. Extract types with subtypes arrays. Generate static supertype mappings as Rust code.
