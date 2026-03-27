@@ -1,6 +1,5 @@
 use std::io::{self, Write};
 use std::path::Path;
-use std::sync::atomic::{AtomicBool, Ordering};
 
 /// Where to write the reduced output.
 pub enum OutputTarget {
@@ -25,11 +24,6 @@ pub fn write_output(source: &[u8], target: &OutputTarget) -> io::Result<()> {
             Ok(())
         }
     }
-}
-
-/// Check if the interrupt flag has been set.
-pub fn is_interrupted(flag: &AtomicBool) -> bool {
-    flag.load(Ordering::Relaxed)
 }
 
 #[cfg(test)]
