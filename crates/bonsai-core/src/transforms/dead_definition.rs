@@ -1,6 +1,7 @@
 //! Transform that removes definitions with no references, using scope analysis.
 
-use tree_sitter::{Node, Tree};
+use std::collections::HashSet;
+use tree_sitter::{Language, Node, Tree};
 
 use crate::scope::ScopeAnalysis;
 use crate::supertype::SupertypeProvider;
@@ -11,39 +12,46 @@ use crate::validity::Replacement;
 ///
 /// Requires a `ScopeAnalysis` built from a `locals.scm` query. When no scope
 /// analysis is available, this transform produces no candidates.
+///
+/// Implements `on_reduction` to recompute dead ranges after each accepted
+/// reduction, so newly-dead definitions are caught as the source shrinks.
 pub struct DeadDefinitionTransform {
     /// Byte ranges of unreferenced definition statements.
-    /// Precomputed from ScopeAnalysis so candidates() is fast.
-    dead_ranges: Vec<(usize, usize)>,
+    /// Recomputed after each accepted reduction via `on_reduction`.
+    dead_ranges: HashSet<(usize, usize)>,
+    /// locals.scm query string, stored for rebuilding scope analysis.
+    locals_query: Option<String>,
 }
 
 impl DeadDefinitionTransform {
     /// Build from a ScopeAnalysis. Precomputes which statement byte ranges
     /// contain unreferenced definitions.
-    pub fn from_analysis(analysis: &ScopeAnalysis, tree: &Tree) -> Self {
-        let mut dead_ranges = Vec::new();
-
-        for def in analysis.unreferenced_definitions() {
-            // Find the containing statement — walk up from the definition node
-            // to find a statement-level node to delete
-            if let Some(stmt_node) = find_containing_statement(tree, def.start_byte, def.end_byte)
-            {
-                let range = (stmt_node.start_byte(), stmt_node.end_byte());
-                if !dead_ranges.contains(&range) {
-                    dead_ranges.push(range);
-                }
-            }
+    pub fn from_analysis(analysis: &ScopeAnalysis, tree: &Tree, locals_query: &str) -> Self {
+        let dead_ranges = compute_dead_ranges(analysis, tree);
+        Self {
+            dead_ranges,
+            locals_query: Some(locals_query.to_string()),
         }
-
-        Self { dead_ranges }
     }
 
     /// Build an empty transform (no scope analysis available).
     pub fn empty() -> Self {
         Self {
-            dead_ranges: Vec::new(),
+            dead_ranges: HashSet::new(),
+            locals_query: None,
         }
     }
+}
+
+/// Compute byte ranges of statements containing unreferenced definitions.
+fn compute_dead_ranges(analysis: &ScopeAnalysis, tree: &Tree) -> HashSet<(usize, usize)> {
+    let mut dead_ranges = HashSet::new();
+    for def in analysis.unreferenced_definitions() {
+        if let Some(stmt_node) = find_containing_statement(tree, def.start_byte, def.end_byte) {
+            dead_ranges.insert((stmt_node.start_byte(), stmt_node.end_byte()));
+        }
+    }
+    dead_ranges
 }
 
 impl Transform for DeadDefinitionTransform {
@@ -70,12 +78,20 @@ impl Transform for DeadDefinitionTransform {
     fn name(&self) -> &str {
         "dead_definition"
     }
+
+    fn on_reduction(&mut self, tree: &Tree, source: &[u8], language: &Language) {
+        if let Some(ref query) = self.locals_query {
+            if let Some(analysis) = ScopeAnalysis::from_tree(tree, source, language, query) {
+                self.dead_ranges = compute_dead_ranges(&analysis, tree);
+            }
+        }
+    }
 }
 
 /// Walk up from a byte range to find the containing statement node.
 fn find_containing_statement(tree: &Tree, start: usize, end: usize) -> Option<Node<'_>> {
     let root = tree.root_node();
-    let node = find_node_at(root, start, end)?;
+    let node = crate::parse::find_node_at(root, start, end)?;
 
     // Walk up to find a statement-level node
     let mut current = node;
@@ -99,28 +115,6 @@ fn find_containing_statement(tree: &Tree, start: usize, end: usize) -> Option<No
     }
 }
 
-/// Find a node at the given byte range.
-fn find_node_at(node: Node<'_>, start: usize, end: usize) -> Option<Node<'_>> {
-    if node.start_byte() == start && node.end_byte() == end {
-        return Some(node);
-    }
-    let mut cursor = node.walk();
-    if cursor.goto_first_child() {
-        loop {
-            let child = cursor.node();
-            if child.start_byte() <= start && child.end_byte() >= end {
-                if let result @ Some(_) = find_node_at(child, start, end) {
-                    return result;
-                }
-            }
-            if !cursor.goto_next_sibling() {
-                break;
-            }
-        }
-    }
-    None
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -140,7 +134,7 @@ mod tests {
         let tree = parse::parse(source, &lang).unwrap();
         let analysis = ScopeAnalysis::from_tree(&tree, source, &lang, locals_content).unwrap();
 
-        let transform = DeadDefinitionTransform::from_analysis(&analysis, &tree);
+        let transform = DeadDefinitionTransform::from_analysis(&analysis, &tree, locals_content);
 
         // Walk the tree and check if the transform proposes deleting the unused variable
         let provider = crate::supertype::EmptyProvider;
@@ -178,7 +172,7 @@ mod tests {
         let tree = parse::parse(source, &lang).unwrap();
         let analysis = ScopeAnalysis::from_tree(&tree, source, &lang, locals_content).unwrap();
 
-        let transform = DeadDefinitionTransform::from_analysis(&analysis, &tree);
+        let transform = DeadDefinitionTransform::from_analysis(&analysis, &tree, locals_content);
 
         // x is used — should NOT be proposed for deletion
         let provider = crate::supertype::EmptyProvider;

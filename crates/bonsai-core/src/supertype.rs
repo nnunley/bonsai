@@ -8,7 +8,7 @@ use tree_sitter::Language;
 
 /// Provides supertype/subtype relationships for a tree-sitter grammar.
 /// Used to determine which node types can replace which positions in the tree.
-pub trait SupertypeProvider {
+pub trait SupertypeProvider: Send + Sync {
     /// Return the supertype IDs that this node kind belongs to.
     fn supertypes_for(&self, kind_id: u16) -> Vec<u16>;
 

@@ -75,10 +75,6 @@ impl ContainsTest {
         }
     }
 
-    #[allow(dead_code)]
-    fn call_count(&self) -> usize {
-        self.calls.load(Ordering::Relaxed)
-    }
 }
 
 impl InterestingnessTest for ContainsTest {
@@ -109,7 +105,6 @@ fn make_config(lang_name: &str, strict: bool) -> ReducerConfig {
         max_time: Duration::from_secs(5),
         jobs: 1,
         strict,
-        max_test_errors: 3,
         interrupted: Arc::new(AtomicBool::new(false)),
     }
 }

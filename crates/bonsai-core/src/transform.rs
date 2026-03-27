@@ -1,10 +1,10 @@
 use crate::supertype::SupertypeProvider;
 use crate::validity::Replacement;
-use tree_sitter::{Node, Tree};
+use tree_sitter::{Language, Node, Tree};
 
 /// A transform proposes candidate replacements for tree nodes.
 /// Each candidate is a Replacement that the caller validates via reparsing.
-pub trait Transform {
+pub trait Transform: Send + Sync {
     /// Propose candidate replacements for the given node.
     /// Returns an empty vec if no replacements are applicable.
     fn candidates(
@@ -17,6 +17,10 @@ pub trait Transform {
 
     /// Human-readable name of this transform (for logging/progress).
     fn name(&self) -> &str;
+
+    /// Called after each accepted reduction so transforms can update internal state.
+    /// Default implementation does nothing.
+    fn on_reduction(&mut self, _tree: &Tree, _source: &[u8], _language: &Language) {}
 }
 
 #[cfg(test)]

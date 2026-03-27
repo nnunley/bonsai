@@ -28,7 +28,7 @@ impl InterestingnessTest for ProducesWrongOutput {
     fn test(&self, input: &[u8]) -> TestResult {
         use std::process::{Command, Stdio};
 
-        let mut child = match Command::new("python3")
+        let child = match Command::new("python3")
             .arg("-c")
             .arg(String::from_utf8_lossy(input).as_ref())
             .stdout(Stdio::piped())
@@ -65,7 +65,6 @@ fn make_config() -> ReducerConfig {
         max_time: Duration::from_secs(30),
         jobs: 1,
         strict: true,
-        max_test_errors: 3,
         interrupted: Arc::new(AtomicBool::new(false)),
     }
 }

@@ -1,4 +1,4 @@
-use tree_sitter::{InputEdit, Language, Parser, Tree};
+use tree_sitter::{InputEdit, Language, Node, Parser, Tree};
 
 /// Parse source code with the given tree-sitter language.
 /// Returns None if parsing fails.
@@ -42,6 +42,28 @@ pub fn reparse(source: &[u8], old_tree: &mut Tree, edit: &InputEdit) -> Option<T
     let mut parser = Parser::new();
     parser.set_language(&old_tree.language()).ok()?;
     parser.parse(source, Some(old_tree))
+}
+
+/// Find a node in the tree by exact byte range.
+pub fn find_node_at<'a>(node: Node<'a>, start: usize, end: usize) -> Option<Node<'a>> {
+    if node.start_byte() == start && node.end_byte() == end {
+        return Some(node);
+    }
+    let mut cursor = node.walk();
+    if cursor.goto_first_child() {
+        loop {
+            let child = cursor.node();
+            if child.start_byte() <= start && child.end_byte() >= end {
+                if let result @ Some(_) = find_node_at(child, start, end) {
+                    return result;
+                }
+            }
+            if !cursor.goto_next_sibling() {
+                break;
+            }
+        }
+    }
+    None
 }
 
 #[cfg(test)]

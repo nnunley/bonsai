@@ -85,7 +85,6 @@ fn compile_grammar(workspace_root: &Path, lang: &LanguageEntry) {
 struct NodeTypeEntry {
     #[serde(rename = "type")]
     type_name: String,
-    named: bool,
     subtypes: Option<Vec<NodeTypeRef>>,
 }
 
@@ -126,6 +125,30 @@ fn parse_node_types(grammar_dir: &Path, src_dir_name: &str) -> Vec<(String, Vec<
         .collect()
 }
 
+/// Validate that a language name is a valid Rust identifier (alphanumeric + underscore).
+fn validate_identifier(name: &str) -> &str {
+    assert!(
+        !name.is_empty() && name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_'),
+        "invalid language name (must be [a-zA-Z0-9_]+): {name:?}"
+    );
+    name
+}
+
+/// Escape a string for embedding in a Rust string literal.
+fn escape_rust_string(s: &str) -> String {
+    s.chars()
+        .map(|c| match c {
+            '\\' => "\\\\".to_string(),
+            '"' => "\\\"".to_string(),
+            '\n' => "\\n".to_string(),
+            '\r' => "\\r".to_string(),
+            '\t' => "\\t".to_string(),
+            '\0' => "\\0".to_string(),
+            c => c.to_string(),
+        })
+        .collect()
+}
+
 fn generate_languages_rs(out_dir: &Path, languages: &[LanguageEntry], workspace_root: &Path) {
     let mut code = String::new();
 
@@ -138,7 +161,8 @@ fn generate_languages_rs(out_dir: &Path, languages: &[LanguageEntry], workspace_
     // extern "C" declarations
     writeln!(code, "extern \"C\" {{").unwrap();
     for lang in languages {
-        writeln!(code, "    fn tree_sitter_{}() -> *const ();", lang.name).unwrap();
+        let name = validate_identifier(&lang.name);
+        writeln!(code, "    fn tree_sitter_{}() -> *const ();", name).unwrap();
     }
     writeln!(code, "}}").unwrap();
     writeln!(code).unwrap();
@@ -223,8 +247,7 @@ fn generate_languages_rs(out_dir: &Path, languages: &[LanguageEntry], workspace_
                     let content = fs::read_to_string(&locals_path).unwrap_or_else(|e| {
                         panic!("Failed to read {}: {}", locals_path.display(), e)
                     });
-                    // Escape the content for embedding as a Rust string literal
-                    let escaped = content.replace('\\', "\\\\").replace('"', "\\\"");
+                    let escaped = escape_rust_string(&content);
                     (
                         format!("Some(\"{}\")", path),
                         format!("Some(\"{}\")", escaped),
@@ -269,19 +292,20 @@ fn generate_languages_rs(out_dir: &Path, languages: &[LanguageEntry], workspace_
         let mappings = parse_node_types(&grammar_dir, &lang.src);
 
         if mappings.is_empty() {
-            writeln!(code, "        \"{}\" => &[],", lang.name).unwrap();
+            writeln!(code, "        \"{}\" => &[],", escape_rust_string(&lang.name)).unwrap();
         } else {
-            writeln!(code, "        \"{}\" => &[", lang.name).unwrap();
+            writeln!(code, "        \"{}\" => &[", escape_rust_string(&lang.name)).unwrap();
             for (supertype, subtypes) in &mappings {
                 let subtypes_str = subtypes
                     .iter()
-                    .map(|s| format!("\"{}\"", s))
+                    .map(|s| format!("\"{}\"", escape_rust_string(s)))
                     .collect::<Vec<_>>()
                     .join(", ");
                 writeln!(
                     code,
                     "            (\"{}\", &[{}]),",
-                    supertype, subtypes_str
+                    escape_rust_string(supertype),
+                    subtypes_str
                 )
                 .unwrap();
             }

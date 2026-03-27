@@ -32,8 +32,6 @@ pub struct ReducerConfig {
     pub jobs: usize,
     /// If true, reject any ERROR/MISSING nodes. If false, only reject NEW errors.
     pub strict: bool,
-    /// Maximum consecutive test errors before aborting (0 = abort on first error).
-    pub max_test_errors: usize,
     /// Interrupt flag: when set to true, the reduction loop will stop at the next
     /// opportunity. Typically set by a SIGINT handler in the CLI.
     pub interrupted: Arc<AtomicBool>,
@@ -60,14 +58,13 @@ pub struct ReducerResult {
 pub fn reduce(
     source: &[u8],
     test: &dyn InterestingnessTest,
-    config: ReducerConfig,
+    mut config: ReducerConfig,
     progress: Option<&dyn ProgressCallback>,
 ) -> ReducerResult {
     let start = Instant::now();
     let mut current_source = source.to_vec();
     let mut tests_run: usize = 0;
     let mut reductions: usize = 0;
-    let mut consecutive_errors: usize = 0;
 
     // Build thread pool for parallel mode
     let pool = if config.jobs > 1 {
@@ -157,10 +154,6 @@ pub fn reduce(
         if config.max_time > Duration::ZERO && start.elapsed() >= config.max_time {
             break;
         }
-        if consecutive_errors >= config.max_test_errors {
-            break;
-        }
-
         // Pop next entry
         let entry = match queue.pop() {
             Some(e) => e,
@@ -201,19 +194,24 @@ pub fn reduce(
 
         // Test candidates — sequential or parallel depending on jobs
         let mut accepted = false;
-        let winning_source = if pool.is_some() {
+        let winning_source = if let Some(ref pool) = pool {
             // Parallel path: test all valid candidates concurrently
             let atomic_tests = AtomicUsize::new(0);
-            let atomic_errors = AtomicUsize::new(consecutive_errors);
             let abort_flag = AtomicBool::new(false);
 
-            let winner = pool.as_ref().unwrap().install(|| {
+            let winner = pool.install(|| {
                 valid_candidates
                     .par_iter()
                     .find_first(|new_source| {
                         // Check termination
                         if abort_flag.load(Ordering::Relaxed)
                             || config.interrupted.load(Ordering::Relaxed)
+                        {
+                            return false;
+                        }
+                        if config.max_tests > 0
+                            && tests_run + atomic_tests.load(Ordering::Relaxed)
+                                >= config.max_tests
                         {
                             return false;
                         }
@@ -231,23 +229,17 @@ pub fn reduce(
                         let result = test.test(new_source);
                         match &result {
                             TestResult::Error(msg) => {
-                                let errs = atomic_errors.fetch_add(1, Ordering::Relaxed) + 1;
                                 if let Some(p) = progress {
                                     p.on_warning(&format!("test error: {}", msg));
-                                }
-                                if errs >= config.max_test_errors {
-                                    abort_flag.store(true, Ordering::Relaxed);
                                 }
                                 false
                             }
                             TestResult::Interesting => {
-                                atomic_errors.store(0, Ordering::Relaxed);
                                 let mut cache = cache_mutex.lock().unwrap();
                                 cache.put(new_source, true);
                                 true
                             }
                             TestResult::NotInteresting => {
-                                atomic_errors.store(0, Ordering::Relaxed);
                                 let mut cache = cache_mutex.lock().unwrap();
                                 cache.put(new_source, false);
                                 false
@@ -258,7 +250,6 @@ pub fn reduce(
             });
 
             tests_run += atomic_tests.load(Ordering::Relaxed);
-            consecutive_errors = atomic_errors.load(Ordering::Relaxed);
             winner
         } else {
             // Sequential path: test one at a time
@@ -274,10 +265,6 @@ pub fn reduce(
                 if config.max_time > Duration::ZERO && start.elapsed() >= config.max_time {
                     break;
                 }
-                if consecutive_errors >= config.max_test_errors {
-                    break;
-                }
-
                 // Check cache
                 {
                     let mut cache = cache_mutex.lock().unwrap();
@@ -293,26 +280,11 @@ pub fn reduce(
                 // Run test
                 tests_run += 1;
                 let test_result = test.test(new_source);
-                match &test_result {
-                    TestResult::Error(msg) => {
-                        consecutive_errors += 1;
-                        if let Some(p) = progress {
-                            p.on_warning(&format!("test error: {}", msg));
-                        }
-                        if consecutive_errors >= config.max_test_errors {
-                            if let Some(p) = progress {
-                                p.on_warning(&format!(
-                                    "aborting after {} consecutive test errors",
-                                    consecutive_errors
-                                ));
-                            }
-                            break;
-                        }
-                        continue;
+                if let TestResult::Error(msg) = &test_result {
+                    if let Some(p) = progress {
+                        p.on_warning(&format!("test error: {}", msg));
                     }
-                    _ => {
-                        consecutive_errors = 0;
-                    }
+                    continue;
                 }
                 let interesting = matches!(test_result, TestResult::Interesting);
                 {
@@ -344,6 +316,10 @@ pub fn reduce(
                         };
                     }
                     queue.rebuild(&tree);
+                    // Notify transforms so they can update stale internal state
+                    for transform in &mut config.transforms {
+                        transform.on_reduction(&tree, &current_source, &config.language);
+                    }
                     reductions += 1;
                     accepted = true;
                 }
@@ -375,7 +351,7 @@ pub fn reduce(
     }
 
     // Final verification: re-run the interestingness test to catch any cache collision corruption
-    if !current_source.is_empty() && current_source != source {
+    if current_source != source {
         let final_result = test.test(&current_source);
         if !matches!(final_result, TestResult::Interesting) {
             // Cache collision corrupted the result or test error — fall back to original
@@ -400,34 +376,7 @@ fn find_node_by_range(
     start: usize,
     end: usize,
 ) -> Option<tree_sitter::Node<'_>> {
-    let root = tree.root_node();
-    find_node_recursive(&root, start, end)
-}
-
-fn find_node_recursive<'a>(
-    node: &tree_sitter::Node<'a>,
-    start: usize,
-    end: usize,
-) -> Option<tree_sitter::Node<'a>> {
-    if node.start_byte() == start && node.end_byte() == end {
-        return Some(*node);
-    }
-    // Only recurse into children that overlap the target range
-    let mut cursor = node.walk();
-    if cursor.goto_first_child() {
-        loop {
-            let child = cursor.node();
-            if child.start_byte() <= start && child.end_byte() >= end {
-                if let result @ Some(_) = find_node_recursive(&child, start, end) {
-                    return result;
-                }
-            }
-            if !cursor.goto_next_sibling() {
-                break;
-            }
-        }
-    }
-    None
+    bonsai_core::parse::find_node_at(tree.root_node(), start, end)
 }
 
 #[cfg(test)]
@@ -453,10 +402,6 @@ mod tests {
             }
         }
 
-        #[allow(dead_code)]
-        fn calls(&self) -> usize {
-            self.call_count.load(Ordering::Relaxed)
-        }
     }
 
     impl InterestingnessTest for ContainsTest {
@@ -487,7 +432,6 @@ mod tests {
             max_time: Duration::ZERO,
             jobs: 1,
             strict,
-            max_test_errors: 3,
             interrupted: Arc::new(AtomicBool::new(false)),
         }
     }
@@ -626,24 +570,6 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_reduce_aborts_after_consecutive_errors() {
-        let lang = bonsai_core::languages::get_language("python").unwrap();
-        let source = b"x = 1\ny = 2\nz = 3";
-        let test = AlwaysErrorTest;
-        let mut config = make_config(lang, true);
-        config.max_test_errors = 2;
-
-        let result = reduce(source, &test, config, None);
-        // Should abort after 2 consecutive errors, returning original source
-        assert_eq!(result.source, source);
-        assert!(
-            result.tests_run <= 3,
-            "Should abort quickly, ran {} tests",
-            result.tests_run
-        );
-    }
-
     /// Mock progress callback that counts invocations.
     struct CountingCallback {
         updates: AtomicUsize,
@@ -749,8 +675,7 @@ mod tests {
         let lang = bonsai_core::languages::get_language("python").unwrap();
         let source = b"x = 1\ny = 2";
         let test = AlwaysErrorTest;
-        let mut config = make_config(lang, true);
-        config.max_test_errors = 10; // high threshold so we don't hit it
+        let config = make_config(lang, true);
 
         let result = reduce(source, &test, config, None);
         // Should return immediately with original source

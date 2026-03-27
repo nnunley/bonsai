@@ -22,7 +22,6 @@ fn make_config(lang_name: &str, strict: bool) -> ReducerConfig {
         max_time: Duration::ZERO,
         jobs: 1,
         strict,
-        max_test_errors: 3,
         interrupted: Arc::new(AtomicBool::new(false)),
     }
 }
@@ -125,7 +124,6 @@ fn test_reduce_with_no_supertypes() {
         max_time: Duration::ZERO,
         jobs: 1,
         strict: true,
-        max_test_errors: 3,
         interrupted: Arc::new(AtomicBool::new(false)),
     };
 

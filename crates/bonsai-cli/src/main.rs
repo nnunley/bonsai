@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 use std::path::PathBuf;
 use std::process;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -38,91 +38,64 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     /// Reduce a test case while preserving an interesting property
-    Reduce {
-        /// Shell command for the interestingness test (exit 0 = interesting)
-        #[arg(short, long)]
-        test: String,
-
-        /// Language name (auto-detected from extension if not specified)
-        #[arg(short, long)]
-        lang: Option<String>,
-
-        /// Write output to file instead of stdout
-        #[arg(short, long)]
-        output: Option<String>,
-
-        /// Number of parallel test workers (1 = sequential/deterministic)
-        #[arg(short, long, default_value = "1")]
-        jobs: usize,
-
-        /// Maximum number of interestingness test invocations (0 = unlimited)
-        #[arg(long, default_value = "0")]
-        max_tests: usize,
-
-        /// Maximum wall-clock time (e.g., "30m", "1h"). 0 = unlimited
-        #[arg(long)]
-        max_time: Option<String>,
-
-        /// Per-test timeout (e.g., "10s", "1m")
-        #[arg(long, default_value = "30s")]
-        test_timeout: String,
-
-        /// Maximum consecutive test errors before aborting
-        #[arg(long, default_value = "3")]
-        max_test_errors: usize,
-
-        /// Reject any ERROR/MISSING nodes (even pre-existing)
-        #[arg(long)]
-        strict: bool,
-
-        /// Suppress progress output
-        #[arg(short, long)]
-        quiet: bool,
-
-        /// Show per-candidate detail
-        #[arg(short, long)]
-        verbose: bool,
-
-        /// Input file to reduce
-        input: PathBuf,
-    },
+    Reduce(ReduceArgs),
 
     /// List supported languages and their file extensions
     Languages,
+}
+
+#[derive(Args)]
+struct ReduceArgs {
+    /// Shell command for the interestingness test (exit 0 = interesting)
+    #[arg(short, long)]
+    test: String,
+
+    /// Language name (auto-detected from extension if not specified)
+    #[arg(short, long)]
+    lang: Option<String>,
+
+    /// Write output to file instead of stdout
+    #[arg(short, long)]
+    output: Option<String>,
+
+    /// Number of parallel test workers (1 = sequential/deterministic)
+    #[arg(short, long, default_value = "1")]
+    jobs: usize,
+
+    /// Maximum number of interestingness test invocations (0 = unlimited)
+    #[arg(long, default_value = "0")]
+    max_tests: usize,
+
+    /// Maximum wall-clock time (e.g., "30m", "1h"). 0 = unlimited
+    #[arg(long)]
+    max_time: Option<String>,
+
+    /// Per-test timeout (e.g., "10s", "1m")
+    #[arg(long, default_value = "30s")]
+    test_timeout: String,
+
+    /// Reject any ERROR/MISSING nodes (even pre-existing)
+    #[arg(long)]
+    strict: bool,
+
+    /// Suppress progress output
+    #[arg(short, long)]
+    quiet: bool,
+
+    /// Show per-candidate detail
+    #[arg(short, long)]
+    verbose: bool,
+
+    /// Input file to reduce
+    input: PathBuf,
 }
 
 fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Reduce {
-            test,
-            lang,
-            output,
-            jobs,
-            max_tests,
-            max_time,
-            test_timeout,
-            max_test_errors,
-            strict,
-            quiet,
-            verbose,
-            input,
-        } => {
-            cmd_reduce(
-                test,
-                lang,
-                output,
-                jobs,
-                max_tests,
-                max_time,
-                test_timeout,
-                max_test_errors,
-                strict,
-                quiet,
-                verbose,
-                input,
-            );
+        Commands::Reduce(args) => {
+            cmd_reduce(args);
         }
         Commands::Languages => {
             cmd_languages();
@@ -135,14 +108,14 @@ fn parse_duration(s: &str) -> Result<Duration, String> {
     if s == "0" {
         return Ok(Duration::ZERO);
     }
-    let (num_str, unit) = if s.ends_with("ms") {
-        (&s[..s.len() - 2], "ms")
-    } else if s.ends_with('s') {
-        (&s[..s.len() - 1], "s")
-    } else if s.ends_with('m') {
-        (&s[..s.len() - 1], "m")
-    } else if s.ends_with('h') {
-        (&s[..s.len() - 1], "h")
+    let (num_str, unit) = if let Some(n) = s.strip_suffix("ms") {
+        (n, "ms")
+    } else if let Some(n) = s.strip_suffix('s') {
+        (n, "s")
+    } else if let Some(n) = s.strip_suffix('m') {
+        (n, "m")
+    } else if let Some(n) = s.strip_suffix('h') {
+        (n, "h")
     } else {
         // Default to seconds
         (s, "s")
@@ -151,8 +124,11 @@ fn parse_duration(s: &str) -> Result<Duration, String> {
     let num: f64 = num_str
         .parse()
         .map_err(|_| format!("invalid duration: {}", s))?;
+    if num < 0.0 || !num.is_finite() {
+        return Err(format!("duration must be non-negative: {}", s));
+    }
     match unit {
-        "ms" => Ok(Duration::from_millis(num as u64)),
+        "ms" => Ok(Duration::from_secs_f64(num / 1000.0)),
         "s" => Ok(Duration::from_secs_f64(num)),
         "m" => Ok(Duration::from_secs_f64(num * 60.0)),
         "h" => Ok(Duration::from_secs_f64(num * 3600.0)),
@@ -160,20 +136,20 @@ fn parse_duration(s: &str) -> Result<Duration, String> {
     }
 }
 
-fn cmd_reduce(
-    test_cmd: String,
-    lang: Option<String>,
-    output: Option<String>,
-    jobs: usize,
-    max_tests: usize,
-    max_time: Option<String>,
-    test_timeout: String,
-    max_test_errors: usize,
-    strict: bool,
-    quiet: bool,
-    verbose: bool,
-    input: PathBuf,
-) {
+fn cmd_reduce(args: ReduceArgs) {
+    let ReduceArgs {
+        test: test_cmd,
+        lang,
+        output,
+        jobs,
+        max_tests,
+        max_time,
+        test_timeout,
+        strict,
+        quiet,
+        verbose,
+        input,
+    } = args;
     // Read input file
     let source = match std::fs::read(&input) {
         Ok(s) => s,
@@ -294,7 +270,7 @@ fn cmd_reduce(
                     }
                     transforms.push(Box::new(
                         bonsai_core::transforms::dead_definition::DeadDefinitionTransform::from_analysis(
-                            &analysis, &tree,
+                            &analysis, &tree, locals_content,
                         ),
                     ));
                 }
@@ -311,7 +287,6 @@ fn cmd_reduce(
         max_time: max_time_dur,
         jobs,
         strict,
-        max_test_errors,
         interrupted: interrupt.as_atomic(),
     };
 

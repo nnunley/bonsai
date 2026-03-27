@@ -4,7 +4,7 @@
 //! using the `@local.scope`, `@local.definition`, and `@local.reference` captures.
 
 use std::collections::HashMap;
-use tree_sitter::{Language, Node, Query, QueryCursor, StreamingIterator, Tree};
+use tree_sitter::{Language, Query, QueryCursor, StreamingIterator, Tree};
 
 /// A definition found by scope analysis.
 #[derive(Debug, Clone)]
@@ -32,6 +32,14 @@ pub struct Reference {
     pub end_byte: usize,
     /// The definition this reference resolves to (if found).
     pub definition_node_id: Option<usize>,
+}
+
+/// A scope node with its byte range for containment checks.
+#[derive(Debug, Clone)]
+struct ScopeNode {
+    start_byte: usize,
+    end_byte: usize,
+    node_id: usize,
 }
 
 /// Result of running scope analysis on a parse tree.
@@ -65,14 +73,18 @@ impl ScopeAnalysis {
         let mut definitions: HashMap<usize, Definition> = HashMap::new();
         let mut references: HashMap<usize, Reference> = HashMap::new();
         let mut scope_definitions: HashMap<usize, Vec<usize>> = HashMap::new();
-        let mut scope_nodes: Vec<(usize, usize)> = Vec::new(); // (start_byte, node_id) for scope lookup
+        let mut scope_nodes: Vec<ScopeNode> = Vec::new();
 
         // Collect all scope nodes first
         let mut cursor = QueryCursor::new();
         let root = tree.root_node();
 
         // Root node is always a scope
-        scope_nodes.push((root.start_byte(), root.id()));
+        scope_nodes.push(ScopeNode {
+            start_byte: root.start_byte(),
+            end_byte: root.end_byte(),
+            node_id: root.id(),
+        });
 
         {
             let mut matches = cursor.matches(&query, root, source);
@@ -80,14 +92,20 @@ impl ScopeAnalysis {
                 for capture in match_.captures {
                     if Some(capture.index) == scope_idx {
                         let node = capture.node;
-                        scope_nodes.push((node.start_byte(), node.id()));
+                        scope_nodes.push(ScopeNode {
+                            start_byte: node.start_byte(),
+                            end_byte: node.end_byte(),
+                            node_id: node.id(),
+                        });
                     }
                 }
             }
         }
 
-        // Sort scopes by start byte for binary search
-        scope_nodes.sort_by_key(|&(start, _)| start);
+        // Sort scopes by start byte, then by descending end byte (larger scopes first)
+        scope_nodes.sort_by(|a, b| {
+            a.start_byte.cmp(&b.start_byte).then(b.end_byte.cmp(&a.end_byte))
+        });
 
         // Now collect definitions and references
         {
@@ -99,7 +117,12 @@ impl ScopeAnalysis {
                     let name = node.utf8_text(source).unwrap_or("").to_string();
 
                     if Some(capture.index) == def_idx {
-                        let scope_id = find_enclosing_scope(&node, &scope_nodes, root.id());
+                        let scope_id = find_enclosing_scope_by_range(
+                            node.start_byte(),
+                            node.end_byte(),
+                            &scope_nodes,
+                            root.id(),
+                        );
                         let def = Definition {
                             node_id: node.id(),
                             name: name.clone(),
@@ -173,63 +196,100 @@ impl ScopeAnalysis {
     }
 }
 
-/// Find the enclosing scope for a node by walking up the tree.
-fn find_enclosing_scope(node: &Node, scope_nodes: &[(usize, usize)], root_id: usize) -> usize {
-    // Walk up the tree from the node to find the nearest scope
-    let mut current = node.parent();
-    while let Some(parent) = current {
-        if scope_nodes.iter().any(|&(_, id)| id == parent.id()) {
-            return parent.id();
+/// Find the innermost scope containing the given byte range.
+fn find_enclosing_scope_by_range(
+    start: usize,
+    end: usize,
+    scope_nodes: &[ScopeNode],
+    root_id: usize,
+) -> usize {
+    // Find the innermost (smallest) scope that fully contains [start, end).
+    let mut best_id = root_id;
+    let mut best_size = usize::MAX;
+    for scope in scope_nodes {
+        let size = scope.end_byte - scope.start_byte;
+        if scope.start_byte <= start && end <= scope.end_byte && size < best_size {
+            best_id = scope.node_id;
+            best_size = size;
         }
-        current = parent.parent();
     }
-    root_id
+    best_id
 }
 
-/// Find a definition by name, walking up the scope chain.
+/// Find a definition by name, walking up the scope chain from the reference's
+/// enclosing scope outward through containing scopes.
 fn find_definition_in_scope_chain(
     name: &str,
     scope_definitions: &HashMap<usize, Vec<usize>>,
     definitions: &HashMap<usize, Definition>,
-    scope_nodes: &[(usize, usize)],
+    scope_nodes: &[ScopeNode],
     root_id: usize,
     _ref_node_id: usize,
     ref_: &Reference,
 ) -> Option<usize> {
-    // Start from the reference's position and find its enclosing scope
-    // Then walk up scopes looking for a definition with the matching name
-    // For simplicity, we check all scopes that contain the reference position
+    // Build a list of scopes that contain the reference, sorted innermost-first
+    // (smallest range first).
+    let ref_start = ref_.start_byte;
+    let ref_end = ref_.end_byte;
+    let mut containing_scopes: Vec<&ScopeNode> = scope_nodes
+        .iter()
+        .filter(|s| s.start_byte <= ref_start && ref_end <= s.end_byte)
+        .collect();
+    // Sort by scope size ascending (innermost first)
+    containing_scopes.sort_by_key(|s| s.end_byte - s.start_byte);
 
-    // Find scopes that contain this reference (by byte range containment)
-    let ref_byte = ref_.start_byte;
-
-    // Collect candidate scopes — those whose range contains the reference
-    // We don't have end_byte for scopes in scope_nodes, so we use a simpler approach:
-    // check all scope definitions for a matching name
-    for &(_start, scope_id) in scope_nodes.iter().rev() {
-        if let Some(def_ids) = scope_definitions.get(&scope_id) {
-            for &def_id in def_ids {
-                if let Some(def) = definitions.get(&def_id) {
-                    if def.name == name && def.start_byte <= ref_byte {
-                        return Some(def_id);
-                    }
-                }
-            }
+    // Walk from innermost scope outward, looking for a matching definition.
+    // Within each scope, pick the nearest preceding definition (largest start_byte
+    // that is still <= ref_start) to handle re-bindings/shadowing correctly.
+    for scope in &containing_scopes {
+        if let Some(found) = find_nearest_def_in_scope(
+            scope.node_id,
+            name,
+            ref_start,
+            scope_definitions,
+            definitions,
+        ) {
+            return Some(found);
         }
     }
 
-    // Check root scope
-    if let Some(def_ids) = scope_definitions.get(&root_id) {
-        for &def_id in def_ids {
-            if let Some(def) = definitions.get(&def_id) {
-                if def.name == name {
-                    return Some(def_id);
-                }
-            }
+    // Fallback: check root scope (root may not be in containing_scopes if
+    // the reference is at the very end of the file)
+    if !containing_scopes.iter().any(|s| s.node_id == root_id) {
+        if let Some(found) = find_nearest_def_in_scope(
+            root_id,
+            name,
+            ref_start,
+            scope_definitions,
+            definitions,
+        ) {
+            return Some(found);
         }
     }
 
     None
+}
+
+/// Find the nearest preceding definition with the given name in a scope.
+/// Returns the definition with the largest start_byte <= ref_start (closest to reference).
+fn find_nearest_def_in_scope(
+    scope_id: usize,
+    name: &str,
+    ref_start: usize,
+    scope_definitions: &HashMap<usize, Vec<usize>>,
+    definitions: &HashMap<usize, Definition>,
+) -> Option<usize> {
+    let def_ids = scope_definitions.get(&scope_id)?;
+    let mut best: Option<(usize, usize)> = None; // (def_id, start_byte)
+    for &def_id in def_ids {
+        if let Some(def) = definitions.get(&def_id) {
+            if def.name == name && def.start_byte <= ref_start
+                && best.is_none_or(|(_, best_start)| def.start_byte > best_start) {
+                    best = Some((def_id, def.start_byte));
+                }
+        }
+    }
+    best.map(|(id, _)| id)
 }
 
 #[cfg(test)]
@@ -299,6 +359,31 @@ mod tests {
         assert!(
             unreferenced_names.contains(&"unused"),
             "Should find 'unused' as unreferenced. Got: {:?}",
+            unreferenced_names
+        );
+    }
+
+    #[test]
+    fn test_scope_analysis_sibling_scopes_do_not_leak() {
+        let lang = languages::get_language("javascript").unwrap();
+        let info = languages::list_languages()
+            .iter()
+            .find(|l| l.name == "javascript")
+            .unwrap();
+        let locals_content = info.locals_scm_content.unwrap();
+
+        // x is defined in function a() but referenced in function b() — they're siblings,
+        // so b's reference to x should NOT resolve to a's definition.
+        let source = b"function a() { let x = 1; } function b() { return x; }";
+        let tree = parse::parse(source, &lang).unwrap();
+        let analysis = ScopeAnalysis::from_tree(&tree, source, &lang, locals_content).unwrap();
+
+        // x in a() should be unreferenced (b's x doesn't resolve to it)
+        let unreferenced = analysis.unreferenced_definitions();
+        let unreferenced_names: Vec<&str> = unreferenced.iter().map(|d| d.name.as_str()).collect();
+        assert!(
+            unreferenced_names.contains(&"x"),
+            "x in a() should be unreferenced since b() is a sibling scope. Got: {:?}",
             unreferenced_names
         );
     }

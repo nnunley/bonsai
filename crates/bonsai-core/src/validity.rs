@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::HashMap;
 use tree_sitter::Tree;
 
 use crate::parse;
@@ -35,20 +35,21 @@ pub fn apply_replacement(source: &[u8], replacement: &Replacement) -> Vec<u8> {
     result
 }
 
-/// A set of error signatures in a parse tree.
+/// A multiset of error signatures in a parse tree.
 /// Used to distinguish pre-existing errors from new ones.
 /// Errors are identified by (node_kind, source_text) rather than byte position,
 /// so they remain stable when byte offsets shift due to earlier deletions.
+/// Uses counts to detect when the same error signature appears more times than before.
 #[derive(Debug, Clone)]
 pub struct ErrorSet {
-    /// Set of (node_kind, source_text_of_error_region) for ERROR and MISSING nodes.
-    errors: HashSet<(String, Vec<u8>)>,
+    /// Count of each (node_kind, source_text) error signature.
+    errors: HashMap<(String, Vec<u8>), usize>,
 }
 
 impl ErrorSet {
     /// Collect all ERROR and MISSING nodes from a tree.
     pub fn from_tree(tree: &Tree, source: &[u8]) -> Self {
-        let mut errors = HashSet::new();
+        let mut errors = HashMap::new();
         let mut cursor = tree.root_node().walk();
         collect_errors_recursive(&mut cursor, source, &mut errors);
         Self { errors }
@@ -60,12 +61,23 @@ impl ErrorSet {
     }
 
     /// Check if a tree has any NEW errors not in this set.
+    /// An error is "new" if its (kind, text) signature appears more times
+    /// in the new tree than in this set.
     pub fn has_new_errors(&self, tree: &Tree, source: &[u8]) -> bool {
+        let mut new_errors = HashMap::new();
         let mut cursor = tree.root_node().walk();
-        has_new_error_recursive(&mut cursor, source, &self.errors)
+        collect_errors_recursive(&mut cursor, source, &mut new_errors);
+
+        for (key, &new_count) in &new_errors {
+            let known_count = self.errors.get(key).copied().unwrap_or(0);
+            if new_count > known_count {
+                return true;
+            }
+        }
+        false
     }
 
-    /// Number of errors.
+    /// Number of distinct error signatures.
     pub fn len(&self) -> usize {
         self.errors.len()
     }
@@ -78,7 +90,7 @@ impl ErrorSet {
 fn collect_errors_recursive(
     cursor: &mut tree_sitter::TreeCursor,
     source: &[u8],
-    errors: &mut HashSet<(String, Vec<u8>)>,
+    errors: &mut HashMap<(String, Vec<u8>), usize>,
 ) {
     let node = cursor.node();
     if node.is_error() || node.is_missing() {
@@ -86,7 +98,7 @@ fn collect_errors_recursive(
             .get(node.start_byte()..node.end_byte())
             .unwrap_or_default()
             .to_vec();
-        errors.insert((node.kind().to_string(), text));
+        *errors.entry((node.kind().to_string(), text)).or_insert(0) += 1;
     }
     if cursor.goto_first_child() {
         loop {
@@ -97,36 +109,6 @@ fn collect_errors_recursive(
         }
         cursor.goto_parent();
     }
-}
-
-fn has_new_error_recursive(
-    cursor: &mut tree_sitter::TreeCursor,
-    source: &[u8],
-    known_errors: &HashSet<(String, Vec<u8>)>,
-) -> bool {
-    let node = cursor.node();
-    if node.is_error() || node.is_missing() {
-        let text = source
-            .get(node.start_byte()..node.end_byte())
-            .unwrap_or_default()
-            .to_vec();
-        if !known_errors.contains(&(node.kind().to_string(), text)) {
-            return true; // Found a new error — early return
-        }
-    }
-    if cursor.goto_first_child() {
-        loop {
-            if has_new_error_recursive(cursor, source, known_errors) {
-                cursor.goto_parent();
-                return true;
-            }
-            if !cursor.goto_next_sibling() {
-                break;
-            }
-        }
-        cursor.goto_parent();
-    }
-    false
 }
 
 /// Check if a tree has any ERROR or MISSING nodes at all.

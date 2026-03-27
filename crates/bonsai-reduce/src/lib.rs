@@ -37,7 +37,6 @@
 //!     max_time: Duration::ZERO, // unlimited
 //!     jobs: 1,
 //!     strict: true,
-//!     max_test_errors: 3,
 //!     interrupted: Arc::new(AtomicBool::new(false)),
 //! };
 //!

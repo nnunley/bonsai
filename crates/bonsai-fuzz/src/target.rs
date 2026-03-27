@@ -107,42 +107,7 @@ impl FuzzTarget {
             }
         }
 
-        match child.wait_timeout(self.timeout) {
-            Ok(Some(status)) => {
-                let mut stderr = Vec::new();
-                if let Some(mut err) = child.stderr.take() {
-                    let _ = std::io::Read::read_to_end(&mut err, &mut stderr);
-                }
-
-                #[cfg(unix)]
-                let signal = {
-                    use std::os::unix::process::ExitStatusExt;
-                    status.signal()
-                };
-
-                Ok(TargetResult {
-                    exit_code: status.code(),
-                    stderr,
-                    timed_out: false,
-                    #[cfg(unix)]
-                    signal,
-                })
-            }
-            Ok(None) => {
-                let _ = child.kill();
-                let _ = child.wait();
-                Ok(TargetResult {
-                    exit_code: None,
-                    stderr: Vec::new(),
-                    timed_out: true,
-                    #[cfg(unix)]
-                    signal: None,
-                })
-            }
-            Err(e) => Err(TargetError {
-                message: format!("failed to wait on process: {e}"),
-            }),
-        }
+        Self::collect_result(child, self.timeout)
     }
 
     fn run_with_file(
@@ -178,7 +143,7 @@ impl FuzzTarget {
             a
         };
 
-        let mut child = Command::new(program)
+        let child = Command::new(program)
             .args(&resolved_args)
             .stdin(Stdio::null())
             .stdout(Stdio::null())
@@ -188,12 +153,29 @@ impl FuzzTarget {
                 message: format!("failed to spawn '{}': {e}", program),
             })?;
 
-        match child.wait_timeout(self.timeout) {
+        Self::collect_result(child, self.timeout)
+    }
+
+    fn collect_result(
+        mut child: std::process::Child,
+        timeout: Duration,
+    ) -> Result<TargetResult, TargetError> {
+        // Drain stderr in a background thread to prevent pipe buffer deadlock.
+        // If the child fills the pipe buffer, it blocks until someone reads — doing
+        // so concurrently with wait_timeout avoids spurious timeouts.
+        let stderr_handle = child.stderr.take().map(|mut err| {
+            std::thread::spawn(move || {
+                let mut buf = Vec::new();
+                let _ = std::io::Read::read_to_end(&mut err, &mut buf);
+                buf
+            })
+        });
+
+        match child.wait_timeout(timeout) {
             Ok(Some(status)) => {
-                let mut stderr = Vec::new();
-                if let Some(mut err) = child.stderr.take() {
-                    let _ = std::io::Read::read_to_end(&mut err, &mut stderr);
-                }
+                let stderr = stderr_handle
+                    .and_then(|h| h.join().ok())
+                    .unwrap_or_default();
 
                 #[cfg(unix)]
                 let signal = {
