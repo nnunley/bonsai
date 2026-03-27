@@ -1,9 +1,9 @@
 id: 77d2563
 title: No-supertype warning
-status: in_progress
+status: closed
 priority: medium
 created: 2026-03-27T02:56:26Z
-updated: 2026-03-27T05:39:48Z
+updated: 2026-03-27T05:41:44Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
