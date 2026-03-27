@@ -12,3 +12,6 @@ tree-sitter-language = "0.1"
 cc = "1"
 toml = "0.8"
 serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+hegeltest = "0.3.0"
