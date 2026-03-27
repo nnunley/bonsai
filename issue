@@ -1,9 +1,9 @@
 id: df9170c
 title: Parse node-types.json in build.rs
-status: in_progress
+status: closed
 priority: medium
 created: 2026-03-27T13:13:48Z
-updated: 2026-03-27T13:13:56Z
+updated: 2026-03-27T13:15:22Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
