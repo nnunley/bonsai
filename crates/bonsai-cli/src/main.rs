@@ -64,6 +64,10 @@ enum Commands {
         #[arg(long, default_value = "30s")]
         test_timeout: String,
 
+        /// Maximum consecutive test errors before aborting
+        #[arg(long, default_value = "3")]
+        max_test_errors: usize,
+
         /// Reject any ERROR/MISSING nodes (even pre-existing)
         #[arg(long)]
         strict: bool,
@@ -96,6 +100,7 @@ fn main() {
             max_tests,
             max_time,
             test_timeout,
+            max_test_errors,
             strict,
             quiet,
             verbose,
@@ -109,6 +114,7 @@ fn main() {
                 max_tests,
                 max_time,
                 test_timeout,
+                max_test_errors,
                 strict,
                 quiet,
                 verbose,
@@ -159,6 +165,7 @@ fn cmd_reduce(
     max_tests: usize,
     max_time: Option<String>,
     test_timeout: String,
+    max_test_errors: usize,
     strict: bool,
     quiet: bool,
     verbose: bool,
@@ -254,6 +261,7 @@ fn cmd_reduce(
         max_time: max_time_dur,
         jobs,
         strict,
+        max_test_errors,
         interrupted: interrupt.as_atomic(),
     };
 

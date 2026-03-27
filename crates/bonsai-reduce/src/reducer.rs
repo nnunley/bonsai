@@ -30,6 +30,8 @@ pub struct ReducerConfig {
     pub jobs: usize,
     /// If true, reject any ERROR/MISSING nodes. If false, only reject NEW errors.
     pub strict: bool,
+    /// Maximum consecutive test errors before aborting (0 = abort on first error).
+    pub max_test_errors: usize,
     /// Interrupt flag: when set to true, the reduction loop will stop at the next
     /// opportunity. Typically set by a SIGINT handler in the CLI.
     pub interrupted: Arc<AtomicBool>,
@@ -63,6 +65,7 @@ pub fn reduce(
     let mut cache = TestCache::new();
     let mut tests_run: usize = 0;
     let mut reductions: usize = 0;
+    let mut consecutive_errors: usize = 0;
 
     // Parse initial tree
     let mut tree = match bonsai_core::parse::parse(&current_source, &config.language) {
@@ -103,6 +106,9 @@ pub fn reduce(
             break;
         }
         if config.max_time > Duration::ZERO && start.elapsed() >= config.max_time {
+            break;
+        }
+        if consecutive_errors > config.max_test_errors {
             break;
         }
 
@@ -179,6 +185,20 @@ pub fn reduce(
             // Run interestingness test
             tests_run += 1;
             let test_result = test.test(&new_source);
+            match &test_result {
+                TestResult::Error(msg) => {
+                    consecutive_errors += 1;
+                    eprintln!("bonsai: test error: {}", msg);
+                    if consecutive_errors > config.max_test_errors {
+                        eprintln!("bonsai: aborting after {} consecutive test errors", consecutive_errors);
+                        break;
+                    }
+                    continue;
+                }
+                _ => {
+                    consecutive_errors = 0;
+                }
+            }
             let interesting = matches!(test_result, TestResult::Interesting);
             cache.put(&new_source, interesting);
 
@@ -317,6 +337,7 @@ mod tests {
             max_time: Duration::ZERO,
             jobs: 1,
             strict,
+            max_test_errors: 3,
             interrupted: Arc::new(AtomicBool::new(false)),
         }
     }
@@ -441,5 +462,28 @@ mod tests {
         let result = reduce(source, &test, config);
         // Should stop immediately without running tests
         assert_eq!(result.tests_run, 0);
+    }
+
+    /// Test that always returns Error.
+    struct AlwaysErrorTest;
+
+    impl InterestingnessTest for AlwaysErrorTest {
+        fn test(&self, _input: &[u8]) -> TestResult {
+            TestResult::Error("simulated error".into())
+        }
+    }
+
+    #[test]
+    fn test_reduce_aborts_after_consecutive_errors() {
+        let lang = bonsai_core::languages::get_language("python").unwrap();
+        let source = b"x = 1\ny = 2\nz = 3";
+        let test = AlwaysErrorTest;
+        let mut config = make_config(lang, true);
+        config.max_test_errors = 2;
+
+        let result = reduce(source, &test, config);
+        // Should abort after 2 consecutive errors, returning original source
+        assert_eq!(result.source, source);
+        assert!(result.tests_run <= 3, "Should abort quickly, ran {} tests", result.tests_run);
     }
 }
