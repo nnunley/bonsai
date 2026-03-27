@@ -7,6 +7,6 @@ updated: 2026-03-27T02:57:28Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
-depends_on: a87bbc2
+depends_on: a87bbc2,045f096
 
 Refactor inner candidate loop. Use rayon par_iter().find_first() for jobs > 1. Sequential for jobs == 1. Accept first interesting result.
