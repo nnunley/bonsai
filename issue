@@ -3,11 +3,11 @@ title: Progress callback trait
 status: blocked
 priority: medium
 created: 2026-03-27T02:56:26Z
-updated: 2026-03-27T02:56:54Z
+updated: 2026-03-27T02:56:55Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: ce90b06
-blocks: 986115f
+blocks: 986115f,4dd71d7
 
 Define ProgressCallback trait with on_update, on_candidate, on_warning methods. Add to reduce() signature. ProgressReporter implements it with interior mutability. Remove report_final.
