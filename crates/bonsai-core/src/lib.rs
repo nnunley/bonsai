@@ -78,6 +78,7 @@
 
 pub mod compat;
 pub mod parse;
+pub mod scope;
 pub mod supertype;
 pub mod transform;
 pub mod transforms;
