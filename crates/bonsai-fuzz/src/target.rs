@@ -170,10 +170,6 @@ impl TargetResult {
     }
 }
 
-// TODO: implement bonsai_reduce::interest::InterestingnessTest for FuzzTarget once the trait is
-// defined in bonsai-reduce. The impl would call self.run(input) and return true for any non-zero
-// exit code or signal.
-
 #[cfg(test)]
 mod tests {
     use super::*;

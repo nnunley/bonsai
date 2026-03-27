@@ -1,4 +1,4 @@
-//! `bonsai-fuzz` — fuzzing engine for generating and mutating tree-sitter parse trees.
+//! `bonsai-fuzz` — subprocess target execution harness and crash interest criteria for fuzz testing.
 
 pub mod criteria;
 pub mod target;

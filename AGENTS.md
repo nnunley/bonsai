@@ -88,7 +88,7 @@ make cover      # cargo tarpaulin
 Rust workspace with four crates:
 - `crates/bonsai-core/` — tree-sitter parsing, SupertypeProvider, transforms, validity checking. Has `build.rs` for grammar compilation.
 - `crates/bonsai-reduce/` — Perses-style priority queue reducer with parallel testing
-- `crates/bonsai-fuzz/` — corpus-based AST splicing fuzzer with positional node pool
+- `crates/bonsai-fuzz/` — subprocess target execution harness and crash interest criteria (AST-splicing fuzzer planned)
 - `crates/bonsai-cli/` — unified CLI (`bonsai reduce`, `bonsai fuzz`, `bonsai languages`)
 
 Grammars are vendored as git submodules under `grammars/` and registered in `grammars.toml`.
@@ -96,7 +96,7 @@ Grammars are vendored as git submodules under `grammars/` and registered in `gra
 ## Key Design Decisions
 
 1. **Reparse is the definitive validity gate.** Lookahead iterator is a best-effort hint only. Always check for ERROR and MISSING nodes after reparsing.
-2. **SupertypeProvider is pluggable.** Three tiers: Language API → supertypes.scm query files → Delete/Unwrap fallback. Many grammars have no supertypes — this is expected.
+2. **SupertypeProvider is pluggable.** Two tiers: Language API (runtime `Language::supertypes()`) → Delete/Unwrap fallback. `ChainProvider` allows stacking future providers (e.g., `node-types.json`-based). Many grammars have no supertypes — this is expected.
 3. **Node handles invalidate on reparse.** The priority queue stores (byte_range, kind_id, token_count) tuples, never Node handles. Queue is rebuilt from scratch after each accepted reduction.
 4. **No shell interpolation.** All external commands use `Command::new` with args arrays.
-5. **FuzzTarget implements InterestingnessTest.** No separate type bridge needed for auto-reduction.
+5. **FuzzTarget → InterestingnessTest bridge planned.** Will be implemented when the AST-splicing fuzzer is built, enabling auto-reduction of fuzz findings.
