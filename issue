@@ -1,9 +1,9 @@
 id: 4a5a19d
 title: FuzzTarget timeout enforcement
-status: open
+status: in_progress
 priority: medium
 created: 2026-03-27T02:56:26Z
-updated: 2026-03-27T02:56:55Z
+updated: 2026-03-27T05:12:01Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
