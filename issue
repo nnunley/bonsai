@@ -1,9 +1,9 @@
 id: 1a078f2
 title: Progress callback trait
-status: blocked
+status: open
 priority: medium
 created: 2026-03-27T02:56:26Z
-updated: 2026-03-27T02:56:55Z
+updated: 2026-03-27T05:17:00Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
