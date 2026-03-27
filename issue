@@ -3,9 +3,10 @@ title: FuzzTarget::run returns Result
 status: open
 priority: medium
 created: 2026-03-27T02:56:27Z
-updated: 2026-03-27T02:56:27Z
+updated: 2026-03-27T02:56:55Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
+depends_on: 4a5a19d
 
 Change FuzzTarget::run return type to Result<TargetResult, TargetError>. Remove TargetResult::error() sentinel. Update tests.
