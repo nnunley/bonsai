@@ -269,13 +269,43 @@ fn cmd_reduce(
         );
     }
 
+    // Build transforms — include DeadDefinitionTransform if locals.scm is available
+    let mut transforms: Vec<Box<dyn bonsai_core::transform::Transform>> = vec![
+        Box::new(bonsai_core::transforms::delete::DeleteTransform),
+        Box::new(bonsai_core::transforms::unwrap::UnwrapTransform),
+    ];
+
+    // Check if this language has locals.scm for scope-aware transforms
+    let lang_info = bonsai_core::languages::list_languages()
+        .iter()
+        .find(|l| l.name == lang_name);
+    if let Some(info) = lang_info {
+        if let Some(locals_content) = info.locals_scm_content {
+            if let Some(tree) = bonsai_core::parse::parse(&source, &language) {
+                if let Some(analysis) =
+                    bonsai_core::scope::ScopeAnalysis::from_tree(&tree, &source, &language, locals_content)
+                {
+                    let dead_defs = analysis.unreferenced_definitions();
+                    if !dead_defs.is_empty() {
+                        eprintln!(
+                            "bonsai: found {} unreferenced definitions via scope analysis",
+                            dead_defs.len()
+                        );
+                    }
+                    transforms.push(Box::new(
+                        bonsai_core::transforms::dead_definition::DeadDefinitionTransform::from_analysis(
+                            &analysis, &tree,
+                        ),
+                    ));
+                }
+            }
+        }
+    }
+
     // Set up config
     let config = bonsai_reduce::reducer::ReducerConfig {
         language: language.clone(),
-        transforms: vec![
-            Box::new(bonsai_core::transforms::delete::DeleteTransform),
-            Box::new(bonsai_core::transforms::unwrap::UnwrapTransform),
-        ],
+        transforms,
         provider: Box::new(provider),
         max_tests,
         max_time: max_time_dur,
