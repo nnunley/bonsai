@@ -3,9 +3,10 @@ title: Thread pool lifecycle
 status: open
 priority: medium
 created: 2026-03-27T02:57:19Z
-updated: 2026-03-27T02:57:19Z
+updated: 2026-03-27T02:57:27Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
+blocks: f466121
 
 Create scoped rayon::ThreadPool with jobs threads. Remove "not yet implemented" comment from ReducerConfig.jobs.
