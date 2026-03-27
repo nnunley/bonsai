@@ -3,9 +3,10 @@ title: ShellTest::new returns Result
 status: open
 priority: medium
 created: 2026-03-27T02:56:25Z
-updated: 2026-03-27T02:56:25Z
+updated: 2026-03-27T02:56:52Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
+depends_on: ce90b06
 
 Change ShellTest::new to return Result<Self, String>. Validate args is non-empty. Update all call sites.
