@@ -1,9 +1,29 @@
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 use std::process;
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
+
+/// Encapsulates interrupt flag creation and signal handler registration.
+struct InterruptFlag {
+    flag: Arc<AtomicBool>,
+}
+
+impl InterruptFlag {
+    fn new() -> Result<Self, ctrlc::Error> {
+        let flag = Arc::new(AtomicBool::new(false));
+        let clone = flag.clone();
+        ctrlc::set_handler(move || {
+            clone.store(true, Ordering::Relaxed);
+        })?;
+        Ok(Self { flag })
+    }
+
+    fn as_atomic(&self) -> Arc<AtomicBool> {
+        self.flag.clone()
+    }
+}
 
 #[derive(Parser)]
 #[command(name = "bonsai", about = "Tree-sitter based test case reducer and fuzzer")]
@@ -215,12 +235,11 @@ fn cmd_reduce(
     let shell_test = bonsai_reduce::ShellTest::new(test_args, timeout);
 
     // Set up interrupt handler
-    let interrupted = Arc::new(AtomicBool::new(false));
-    let flag = interrupted.clone();
-    ctrlc::set_handler(move || {
-        flag.store(true, std::sync::atomic::Ordering::Relaxed);
-    })
-    .ok();
+    let interrupt = InterruptFlag::new().unwrap_or_else(|e| {
+        eprintln!("bonsai: warning: failed to register interrupt handler: {}", e);
+        // Fall back to an unregistered flag — Ctrl-C won't gracefully stop reduction
+        InterruptFlag { flag: Arc::new(AtomicBool::new(false)) }
+    });
 
     // Set up provider
     let provider = bonsai_core::supertype::LanguageApiProvider::new(&language);
@@ -237,7 +256,7 @@ fn cmd_reduce(
         max_time: max_time_dur,
         jobs,
         strict,
-        interrupted,
+        interrupted: interrupt.as_atomic(),
     };
 
     // Set up progress reporter
