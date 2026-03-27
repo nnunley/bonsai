@@ -1,9 +1,9 @@
 id: b05f5c5
 title: FuzzTarget::run returns Result
-status: in_progress
+status: closed
 priority: medium
 created: 2026-03-27T02:56:27Z
-updated: 2026-03-27T05:14:58Z
+updated: 2026-03-27T05:16:43Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
