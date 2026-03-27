@@ -1,9 +1,9 @@
 id: 10ad582
 title: NodeTypesProvider from node-types.json
-status: open
+status: closed
 priority: medium
 created: 2026-03-27T13:13:48Z
-updated: 2026-03-27T13:13:55Z
+updated: 2026-03-27T13:21:15Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
