@@ -3,10 +3,10 @@ title: Initial input validation
 status: blocked
 priority: medium
 created: 2026-03-27T02:56:26Z
-updated: 2026-03-27T02:56:54Z
+updated: 2026-03-27T02:56:55Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
-depends_on: ce90b06
+depends_on: ce90b06,1a078f2
 
 Add initial input check to reduce() using TestResult. Return early on NotInteresting (tests_run=1). Fatal error on Error.
