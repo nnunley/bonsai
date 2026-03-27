@@ -3,9 +3,10 @@ title: Implement ScopeAnalysis
 status: open
 priority: medium
 created: 2026-03-27T13:25:24Z
-updated: 2026-03-27T13:25:24Z
+updated: 2026-03-27T13:25:33Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
+depends_on: 8f3fe59
 
 Load locals.scm query, run against parse tree, build scope/definition/reference mappings. Handle @local.scope, @local.definition, @local.reference captures.
