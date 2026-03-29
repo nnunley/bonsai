@@ -1,0 +1,11 @@
+id: b1a0069
+title: Build-time inlines.scm validation and InlineCapabilities codegen
+status: open
+priority: medium
+created: 2026-03-29T17:43:33Z
+updated: 2026-03-29T17:43:33Z
+author: Norman Nunley, Jr
+assignee: Norman Nunley, Jr
+hash_source: content
+
+Extend build.rs to validate inlines.scm captures at build time. Required captures (inline.definition, def_name, body, call, call_name) missing -> warning, inlining disabled for that language. Partial capture groups -> warning. Syntax error -> build error. Generate InlineCapabilities struct (has_substitution, has_imports, has_returns) embedded in LanguageInfo. Per-language validation: broken inlines.scm for one language does not block others. See spec "Build-Time Diagnostics".
