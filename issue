@@ -7,6 +7,6 @@ updated: 2026-03-29T17:46:02Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
-depends_on: 6a15b5a,bcb0c9a,f78c042
+depends_on: 6a15b5a,bcb0c9a,f78c042,22e7b1b
 
 Implement reduce_project() orchestrator. Initial validation: run test on unmodified project. Phase 0: group roots by language, construct CallInlineTransform per language with DependencyIndex, call inline_root() per root, track InlineStats. Phase 1: iterate dependency files largest first, try excluding from temp dir, keep if test passes. Phase 2: reduce each root with existing reduce(). Budget shared across all phases cumulatively. ProjectReducerConfig wraps settings. ProjectReducerResult with per-phase stats. See multi-file spec "Three-Phase Reduction".
