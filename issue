@@ -7,6 +7,6 @@ updated: 2026-03-29T17:46:01Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
-blocks: 6a15b5a
+blocks: 6a15b5a,ba08f29
 
 Implement ProjectFileSet: owns TempDir, HashMap<PathBuf, Vec<u8>>, tracks root vs dependency. FileCommand trait with apply()/undo(). ModifyCommand and ExcludeCommand implementations. Per-file command stack. from_directory(path, roots): recursive load, skip .git/ target/ etc, classify root/dep. update_file(): push ModifyCommand. exclude_file(): push ExcludeCommand, error on roots. undo_last(): pop and undo. root_files(), dependency_files() (sorted by size desc), temp_dir_path(). See multi-file spec "Project File Set".
