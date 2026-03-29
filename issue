@@ -7,6 +7,6 @@ updated: 2026-03-29T17:45:58Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
-depends_on: b1a0069
+depends_on: b1a0069,c0d30f8
 
 Implement CallAnalysis::from_tree() that runs inlines.scm queries and builds FunctionDef, CallSite, ImportBinding, Param, Arg structs. Associate child captures with parents by byte-range containment. Mirrors ScopeAnalysis pattern. Data structures: FunctionDef (name, params, body_range, node_range, file), CallSite (name, args, node_range), ImportBinding (local_name, source, range), CallAnalysis (definitions, call_sites, imports). See spec "CallAnalysis Module".
