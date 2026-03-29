@@ -8,5 +8,6 @@ author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: 3aca02d
+blocks: b1a0069
 
 Create inlines.scm query files for each supported language in queries/<lang>/inlines.scm. Capture: @inline.definition, @inline.def_name, @inline.body, @inline.call, @inline.call_name, @inline.parameter, @inline.argument, @inline.import, @inline.import_name, @inline.import_source, @inline.return, @inline.return_value. Python: function_definition, call, import_from_statement, return_statement. JavaScript: function_declaration/expression/arrow, call_expression, import_statement, return_statement. Rust: function_item, call_expression, use_declaration, return_expression. See spec "inlines.scm Capture Convention" and "Example: Python inlines.scm".
