@@ -1,0 +1,11 @@
+id: 4b5ec28
+title: CLI integration: directory input, --roots, --deps, config discovery
+status: open
+priority: medium
+created: 2026-03-29T17:45:21Z
+updated: 2026-03-29T17:45:21Z
+author: Norman Nunley, Jr
+assignee: Norman Nunley, Jr
+hash_source: content
+
+Extend bonsai reduce CLI. Auto-detect directory vs file input. Directory: require --output, ignore --lang, load/merge BonsaiConfig, call reduce_project(). Single file with inlines.scm: construct lightweight project context (file as root, containing dir as deps), run three-phase. Single file without inlines.scm: existing behavior. New flags: --roots, --deps, --exclude-deps, --config. Integration tests for multi-file project, config discovery, CLI override, single-file inlining. See multi-file spec "Auto-Detection" and call-inlining spec "CLI".
