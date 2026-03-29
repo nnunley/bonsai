@@ -1,0 +1,11 @@
+id: 3aca02d
+title: Query directory migration: move query files to queries/<lang>/
+status: open
+priority: medium
+created: 2026-03-29T17:43:12Z
+updated: 2026-03-29T17:43:12Z
+author: Norman Nunley, Jr
+assignee: Norman Nunley, Jr
+hash_source: content
+
+Move all tree-sitter query files from grammar submodules to a top-level queries/ directory. Create queries/python/, queries/javascript/, queries/rust/ with tags.scm, locals.scm. Add queries/NOTICE for MIT attribution. Update grammars.toml to use queries field instead of locals. Update build.rs to resolve paths from queries directory and embed all .scm files. Consolidate LanguageInfo to content-only fields (drop path fields). See docs/superpowers/specs/2026-03-28-call-inlining-design.md "Query Directory Structure" and "grammars.toml and build.rs Changes".
