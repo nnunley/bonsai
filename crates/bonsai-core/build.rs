@@ -172,11 +172,18 @@ fn generate_languages_rs(out_dir: &Path, languages: &[LanguageEntry], workspace_
     writeln!(code, "use tree_sitter_language::LanguageFn;").unwrap();
     writeln!(code).unwrap();
 
+    // Validate all identifiers and extensions upfront
+    for lang in languages {
+        validate_identifier(&lang.name);
+        for ext in &lang.extensions {
+            validate_identifier(ext);
+        }
+    }
+
     // extern "C" declarations
     writeln!(code, "extern \"C\" {{").unwrap();
     for lang in languages {
-        let name = validate_identifier(&lang.name);
-        writeln!(code, "    fn tree_sitter_{}() -> *const ();", name).unwrap();
+        writeln!(code, "    fn tree_sitter_{}() -> *const ();", lang.name).unwrap();
     }
     writeln!(code, "}}").unwrap();
     writeln!(code).unwrap();

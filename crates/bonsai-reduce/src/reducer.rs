@@ -391,6 +391,7 @@ pub fn reduce(
 
     // Final verification: re-run the interestingness test to catch any cache collision corruption
     if current_source != source {
+        tests_run += 1;
         let final_result = test.test(&current_source);
         if !matches!(final_result, TestResult::Interesting) {
             // Cache collision corrupted the result or test error — fall back to original
