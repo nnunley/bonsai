@@ -3,9 +3,10 @@ title: ProjectTest adapter for project-level interestingness testing
 status: open
 priority: medium
 created: 2026-03-29T17:44:54Z
-updated: 2026-03-29T17:44:54Z
+updated: 2026-03-29T17:46:02Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
+blocks: ba08f29
 
 Implement ProjectTest struct: owned PathBuf for temp dir and target file, command Vec<String>, timeout Duration. Implement InterestingnessTest for ProjectTest: write candidate bytes to target file in temp dir, run test command with temp dir path as last argument, return TestResult. See multi-file spec "Project Interestingness Test Adapter".
