@@ -21,7 +21,7 @@
 
 ## 4. Build System Integration
 - [ ] 4.1 Parse `locals` field in build.rs `LanguageEntry`
-- [ ] 4.2 Include `locals_scm` path in generated `LanguageInfo`
+- [ ] 4.2 Include `locals_scm` (embedded content) in generated `LanguageInfo`
 - [ ] 4.3 Load locals.scm at runtime in the CLI when available
 - [ ] 4.4 Add UnifyIdentifiers and DeadDefinition transforms to the reducer's transform list when locals.scm is available
 

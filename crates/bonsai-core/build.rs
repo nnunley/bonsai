@@ -15,7 +15,7 @@ struct LanguageEntry {
     grammar: String,
     extensions: Vec<String>,
     src: String,
-    locals: Option<String>,
+    queries: Option<String>,
 }
 
 fn main() {
@@ -149,6 +149,20 @@ fn escape_rust_string(s: &str) -> String {
         .collect()
 }
 
+/// Read a .scm file from a directory and return its Rust literal representation.
+/// Returns "None" if the file doesn't exist.
+fn embed_scm_file(dir: &Path, filename: &str) -> String {
+    let path = dir.join(filename);
+    if path.exists() {
+        println!("cargo:rerun-if-changed={}", path.display());
+        let content = fs::read_to_string(&path)
+            .unwrap_or_else(|e| panic!("Failed to read {}: {}", path.display(), e));
+        format!("Some(\"{}\")", escape_rust_string(&content))
+    } else {
+        "None".to_string()
+    }
+}
+
 fn generate_languages_rs(out_dir: &Path, languages: &[LanguageEntry], workspace_root: &Path) {
     let mut code = String::new();
 
@@ -171,10 +185,10 @@ fn generate_languages_rs(out_dir: &Path, languages: &[LanguageEntry], workspace_
     writeln!(code, "pub struct LanguageInfo {{").unwrap();
     writeln!(code, "    pub name: &'static str,").unwrap();
     writeln!(code, "    pub extensions: &'static [&'static str],").unwrap();
-    writeln!(code, "    /// Path to locals.scm (relative to grammar dir), if configured.").unwrap();
+    writeln!(code, "    /// Embedded contents of locals.scm, if the file exists in the queries directory.").unwrap();
     writeln!(code, "    pub locals_scm: Option<&'static str>,").unwrap();
-    writeln!(code, "    /// Embedded contents of locals.scm, if the file exists at build time.").unwrap();
-    writeln!(code, "    pub locals_scm_content: Option<&'static str>,").unwrap();
+    writeln!(code, "    /// Embedded contents of tags.scm, if the file exists in the queries directory.").unwrap();
+    writeln!(code, "    pub tags_scm: Option<&'static str>,").unwrap();
     writeln!(code, "}}").unwrap();
     writeln!(code).unwrap();
 
@@ -238,30 +252,21 @@ fn generate_languages_rs(out_dir: &Path, languages: &[LanguageEntry], workspace_
             .map(|e| format!("\"{}\"", e))
             .collect::<Vec<_>>()
             .join(", ");
-        let (locals_path_str, locals_content) = match &lang.locals {
-            Some(path) => {
-                let grammar_dir = workspace_root.join(&lang.grammar);
-                let locals_path = grammar_dir.join(path);
-                if locals_path.exists() {
-                    println!("cargo:rerun-if-changed={}", locals_path.display());
-                    let content = fs::read_to_string(&locals_path).unwrap_or_else(|e| {
-                        panic!("Failed to read {}: {}", locals_path.display(), e)
-                    });
-                    let escaped = escape_rust_string(&content);
-                    (
-                        format!("Some(\"{}\")", path),
-                        format!("Some(\"{}\")", escaped),
-                    )
-                } else {
-                    ("None".to_string(), "None".to_string())
-                }
+
+        let (locals_content, tags_content) = match &lang.queries {
+            Some(queries_dir) => {
+                let queries_path = workspace_root.join(queries_dir);
+                let locals = embed_scm_file(&queries_path, "locals.scm");
+                let tags = embed_scm_file(&queries_path, "tags.scm");
+                (locals, tags)
             }
             None => ("None".to_string(), "None".to_string()),
         };
+
         writeln!(
             code,
-            "        LanguageInfo {{ name: \"{}\", extensions: &[{}], locals_scm: {}, locals_scm_content: {} }},",
-            lang.name, exts, locals_path_str, locals_content
+            "        LanguageInfo {{ name: \"{}\", extensions: &[{}], locals_scm: {}, tags_scm: {} }},",
+            lang.name, exts, locals_content, tags_content
         )
         .unwrap();
     }

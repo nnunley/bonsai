@@ -7,25 +7,25 @@
 # no manual configuration needed.
 #
 # Optional fields:
-#   locals — path to locals.scm for scope-aware transforms (identifier unification, dead def removal)
+#   queries — path to directory containing .scm query files (locals.scm, tags.scm, etc.)
 
 [[language]]
 name = "python"
 grammar = "grammars/tree-sitter-python"
 extensions = ["py", "pyi"]
 src = "src"
-# locals = "queries/locals.scm"  # not shipped in this submodule; available from nvim-treesitter
+queries = "queries/python"
 
 [[language]]
 name = "javascript"
 grammar = "grammars/tree-sitter-javascript"
 extensions = ["js", "mjs", "cjs"]
 src = "src"
-locals = "queries/locals.scm"
+queries = "queries/javascript"
 
 [[language]]
 name = "rust"
 grammar = "grammars/tree-sitter-rust"
 extensions = ["rs"]
 src = "src"
-# locals = "queries/locals.scm"  # not shipped in this submodule; available from nvim-treesitter
+queries = "queries/rust"

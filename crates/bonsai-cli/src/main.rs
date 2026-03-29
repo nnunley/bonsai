@@ -256,7 +256,7 @@ fn cmd_reduce(args: ReduceArgs) {
         .iter()
         .find(|l| l.name == lang_name);
     if let Some(info) = lang_info {
-        if let Some(locals_content) = info.locals_scm_content {
+        if let Some(locals_content) = info.locals_scm {
             if let Some(tree) = bonsai_core::parse::parse(&source, &language) {
                 if let Some(analysis) =
                     bonsai_core::scope::ScopeAnalysis::from_tree(&tree, &source, &language, locals_content)

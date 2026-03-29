@@ -27,7 +27,7 @@ use crate::validity::Replacement;
 ///     .into_iter()
 ///     .find(|l| l.name == "javascript")
 ///     .unwrap();
-/// let locals_scm = info.locals_scm_content.unwrap();
+/// let locals_scm = info.locals_scm.unwrap();
 ///
 /// let source = b"function foo() { let unused = 1; let used = 2; return used; }";
 /// let tree = bonsai_core::parse::parse(source, &lang).unwrap();
@@ -152,7 +152,7 @@ mod tests {
             .iter()
             .find(|l| l.name == "javascript")
             .unwrap();
-        let locals_content = info.locals_scm_content.unwrap();
+        let locals_content = info.locals_scm.unwrap();
 
         let source = b"function foo() { let unused = 1; let used = 2; return used; }";
         let tree = parse::parse(source, &lang).unwrap();
@@ -190,7 +190,7 @@ mod tests {
             .iter()
             .find(|l| l.name == "javascript")
             .unwrap();
-        let locals_content = info.locals_scm_content.unwrap();
+        let locals_content = info.locals_scm.unwrap();
 
         let source = b"let x = 1; console.log(x);";
         let tree = parse::parse(source, &lang).unwrap();

@@ -13,7 +13,7 @@
 //!     .into_iter()
 //!     .find(|l| l.name == "javascript")
 //!     .unwrap();
-//! let locals_scm = info.locals_scm_content.unwrap();
+//! let locals_scm = info.locals_scm.unwrap();
 //!
 //! let source = b"function foo() { let x = 1; return x; }";
 //! let tree = bonsai_core::parse::parse(source, &lang).unwrap();
@@ -330,7 +330,7 @@ mod tests {
             .iter()
             .find(|l| l.name == "javascript")
             .unwrap();
-        let locals_content = info.locals_scm_content.expect("JS should have locals.scm");
+        let locals_content = info.locals_scm.expect("JS should have locals.scm");
 
         let source = b"function foo() { let x = 1; return x; }";
         let tree = parse::parse(source, &lang).unwrap();
@@ -372,7 +372,7 @@ mod tests {
             .iter()
             .find(|l| l.name == "javascript")
             .unwrap();
-        let locals_content = info.locals_scm_content.unwrap();
+        let locals_content = info.locals_scm.unwrap();
 
         let source = b"function foo() { let unused = 1; let used = 2; return used; }";
         let tree = parse::parse(source, &lang).unwrap();
@@ -396,7 +396,7 @@ mod tests {
             .iter()
             .find(|l| l.name == "javascript")
             .unwrap();
-        let locals_content = info.locals_scm_content.unwrap();
+        let locals_content = info.locals_scm.unwrap();
 
         // x is defined in function a() but referenced in function b() — they're siblings,
         // so b's reference to x should NOT resolve to a's definition.
