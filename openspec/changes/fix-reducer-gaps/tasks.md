@@ -23,8 +23,8 @@
 
 ## 4. Parse `locals` Field in build.rs
 - [ ] 4.1 Add `locals: Option<String>` to `LanguageEntry` struct in build.rs
-- [ ] 4.2 Include `locals_scm` in the generated `LanguageInfo` struct
-- [ ] 4.3 Add test: verify `LanguageInfo` for JavaScript includes locals path
+- [ ] 4.2 Include `locals_scm` (embedded content) in the generated `LanguageInfo` struct
+- [ ] 4.3 Add test: verify `LanguageInfo` for JavaScript includes locals content
 
 ## 5. Update Specs to Match Implementation
 - [ ] 5.1 Update validity spec to document content-based error tracking

@@ -2,6 +2,52 @@
 //!
 //! Provides a pluggable system for determining node type compatibility —
 //! the core of how bonsai knows what can replace what in a parse tree.
+//!
+//! # Using the runtime API provider
+//!
+//! ```
+//! use bonsai_core::supertype::{LanguageApiProvider, SupertypeProvider};
+//!
+//! let lang = bonsai_core::languages::get_language("python").unwrap();
+//! let provider = LanguageApiProvider::new(&lang);
+//!
+//! // Python grammar has supertypes (e.g., _expression, _statement)
+//! assert!(provider.has_supertypes());
+//!
+//! // An identifier is a subtype of some expression supertype
+//! let id_kind = lang.id_for_node_kind("identifier", true);
+//! let supertypes = provider.supertypes_for(id_kind);
+//! assert!(!supertypes.is_empty());
+//! ```
+//!
+//! # Chaining providers for fallback
+//!
+//! ```
+//! use bonsai_core::supertype::{ChainProvider, LanguageApiProvider, NodeTypesProvider, SupertypeProvider};
+//!
+//! let lang = bonsai_core::languages::get_language("python").unwrap();
+//! let chain = ChainProvider::new(vec![
+//!     Box::new(LanguageApiProvider::new(&lang)),
+//!     Box::new(NodeTypesProvider::new(&lang, "python")),
+//! ]);
+//!
+//! let id_kind = lang.id_for_node_kind("identifier", true);
+//! let supertypes = chain.supertypes_for(id_kind);
+//! assert!(!supertypes.is_empty());
+//! ```
+//!
+//! # EmptyProvider as a no-op fallback
+//!
+//! ```
+//! use bonsai_core::supertype::{EmptyProvider, SupertypeProvider};
+//!
+//! let provider = EmptyProvider;
+//! assert!(provider.supertypes_for(42).is_empty());
+//! assert!(provider.subtypes_for(42).is_empty());
+//! // Same type is always compatible, different types are not
+//! assert!(provider.is_compatible(5, 5));
+//! assert!(!provider.is_compatible(5, 10));
+//! ```
 
 use std::collections::HashMap;
 use tree_sitter::Language;

@@ -36,6 +36,21 @@ impl PartialOrd for QueueEntry {
 
 /// Priority queue for the Perses-style reduction algorithm.
 /// Nodes are ordered by token count (largest first).
+///
+/// ```
+/// use bonsai_reduce::queue::ReductionQueue;
+///
+/// let lang = bonsai_core::languages::get_language("python").unwrap();
+/// let tree = bonsai_core::parse::parse(b"x = 1\ny = 2\nz = 3", &lang).unwrap();
+///
+/// let mut queue = ReductionQueue::from_tree(&tree);
+/// assert!(!queue.is_empty());
+///
+/// // Pops largest nodes first
+/// let first = queue.pop().unwrap();
+/// let second = queue.pop().unwrap();
+/// assert!(first.token_count >= second.token_count);
+/// ```
 pub struct ReductionQueue {
     heap: BinaryHeap<QueueEntry>,
 }

@@ -2,6 +2,25 @@ use regex::Regex;
 
 /// Criteria for determining whether a target execution result is "interesting."
 /// Multiple criteria can be combined — any match makes the result interesting.
+///
+/// ```
+/// use bonsai_fuzz::criteria::InterestCriteria;
+/// use bonsai_fuzz::target::TargetResult;
+///
+/// // Build custom criteria with the builder pattern
+/// let criteria = InterestCriteria::none()
+///     .with_any_nonzero_exit()
+///     .with_timeout();
+///
+/// let timeout_result = TargetResult {
+///     exit_code: None,
+///     stderr: Vec::new(),
+///     timed_out: true,
+///     #[cfg(unix)]
+///     signal: None,
+/// };
+/// assert!(criteria.is_interesting(&timeout_result));
+/// ```
 #[derive(Clone)]
 pub struct InterestCriteria {
     checks: Vec<InterestCheck>,

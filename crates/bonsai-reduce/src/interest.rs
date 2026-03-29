@@ -17,6 +17,29 @@ pub enum TestResult {
 
 /// Trait for determining whether a candidate input is "interesting"
 /// (e.g., still triggers a bug after reduction).
+///
+/// Implement this to define custom interestingness criteria for programmatic use.
+/// For shell-command-based tests, see [`ShellTest`].
+///
+/// ```
+/// use bonsai_reduce::{InterestingnessTest, TestResult};
+///
+/// struct ContainsKeyword(Vec<u8>);
+///
+/// impl InterestingnessTest for ContainsKeyword {
+///     fn test(&self, input: &[u8]) -> TestResult {
+///         if input.windows(self.0.len()).any(|w| w == self.0.as_slice()) {
+///             TestResult::Interesting
+///         } else {
+///             TestResult::NotInteresting
+///         }
+///     }
+/// }
+///
+/// let test = ContainsKeyword(b"error".to_vec());
+/// assert_eq!(test.test(b"an error occurred"), TestResult::Interesting);
+/// assert_eq!(test.test(b"all good"), TestResult::NotInteresting);
+/// ```
 pub trait InterestingnessTest: Send + Sync {
     fn test(&self, input: &[u8]) -> TestResult;
 }

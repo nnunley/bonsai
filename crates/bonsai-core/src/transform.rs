@@ -3,7 +3,44 @@ use crate::validity::Replacement;
 use tree_sitter::{Language, Node, Tree};
 
 /// A transform proposes candidate replacements for tree nodes.
-/// Each candidate is a Replacement that the caller validates via reparsing.
+/// Each candidate is a [`Replacement`] that the caller validates via reparsing.
+///
+/// # Implementing a custom transform
+///
+/// ```
+/// use bonsai_core::transform::Transform;
+/// use bonsai_core::validity::Replacement;
+/// use bonsai_core::supertype::SupertypeProvider;
+/// use tree_sitter::{Node, Tree};
+///
+/// /// A transform that proposes deleting any node containing "unused" in its text.
+/// struct RemoveUnusedTransform;
+///
+/// impl Transform for RemoveUnusedTransform {
+///     fn candidates(
+///         &self, node: &Node, source: &[u8], _tree: &Tree,
+///         _provider: &dyn SupertypeProvider,
+///     ) -> Vec<Replacement> {
+///         let text = &source[node.start_byte()..node.end_byte()];
+///         if text.windows(6).any(|w| w == b"unused") {
+///             vec![Replacement {
+///                 start_byte: node.start_byte(),
+///                 end_byte: node.end_byte(),
+///                 new_bytes: vec![],
+///             }]
+///         } else {
+///             vec![]
+///         }
+///     }
+///     fn name(&self) -> &str { "remove_unused" }
+/// }
+///
+/// // Transforms are object-safe and can be boxed
+/// let transform: Box<dyn Transform> = Box::new(RemoveUnusedTransform);
+/// assert_eq!(transform.name(), "remove_unused");
+/// ```
+///
+/// [`Replacement`]: crate::validity::Replacement
 pub trait Transform: Send + Sync {
     /// Propose candidate replacements for the given node.
     /// Returns an empty vec if no replacements are applicable.

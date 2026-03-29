@@ -5,6 +5,30 @@ use tree_sitter::{Node, Tree};
 
 /// Proposes replacing a node with one of its children that has a compatible type.
 /// For example, replacing `(x + y)` (parenthesized_expression) with `x + y`.
+///
+/// Requires a [`SupertypeProvider`] with actual supertype information to find
+/// compatible children. With [`EmptyProvider`], no unwrap candidates are generated.
+///
+/// ```
+/// use bonsai_core::transform::Transform;
+/// use bonsai_core::transforms::unwrap::UnwrapTransform;
+/// use bonsai_core::supertype::{EmptyProvider, LanguageApiProvider};
+///
+/// let lang = bonsai_core::languages::get_language("python").unwrap();
+/// let source = b"x = 1";
+/// let tree = bonsai_core::parse::parse(source, &lang).unwrap();
+///
+/// let transform = UnwrapTransform;
+///
+/// // With EmptyProvider, no children are considered compatible
+/// let empty = EmptyProvider;
+/// let root = tree.root_node();
+/// let candidates = transform.candidates(&root.named_child(0).unwrap(), source, &tree, &empty);
+/// assert!(candidates.is_empty());
+/// ```
+///
+/// [`SupertypeProvider`]: crate::supertype::SupertypeProvider
+/// [`EmptyProvider`]: crate::supertype::EmptyProvider
 pub struct UnwrapTransform;
 
 impl Transform for UnwrapTransform {

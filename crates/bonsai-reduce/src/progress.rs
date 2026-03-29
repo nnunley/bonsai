@@ -38,6 +38,19 @@ pub enum Verbosity {
 }
 
 /// Reports reduction progress to stderr. Implements `ProgressCallback`.
+///
+/// ```
+/// use bonsai_reduce::progress::{ProgressReporter, Verbosity};
+///
+/// // Quiet mode suppresses all output
+/// let reporter = ProgressReporter::new(Verbosity::Quiet, 1000);
+///
+/// // Normal mode prints periodic updates to stderr
+/// let reporter = ProgressReporter::new(Verbosity::Normal, 1000);
+///
+/// // Verbose mode shows per-candidate detail
+/// let reporter = ProgressReporter::new(Verbosity::Verbose, 1000);
+/// ```
 pub struct ProgressReporter {
     verbosity: Verbosity,
     original_size: usize,
