@@ -3,9 +3,10 @@ title: Argument-to-parameter substitution via scope-aware rewriting
 status: open
 priority: medium
 created: 2026-03-29T17:44:02Z
-updated: 2026-03-29T17:44:02Z
+updated: 2026-03-29T17:45:59Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
+depends_on: 08aa1a5
 
 Implement default substitution: run ScopeAnalysis on full definition file tree, find @local.reference nodes matching parameter names within body range, replace with argument text. Requires locals.scm. Without locals.scm: zero-arity functions inline verbatim, non-zero-arity skipped. Handle PartiallyCapturedParams (query captures fewer params than declared). See spec "Argument-to-Parameter Substitution".
