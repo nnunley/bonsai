@@ -1,0 +1,11 @@
+id: 4846759
+title: DependencyIndex: index dependency files for call resolution
+status: open
+priority: medium
+created: 2026-03-29T17:44:12Z
+updated: 2026-03-29T17:44:12Z
+author: Norman Nunley, Jr
+assignee: Norman Nunley, Jr
+hash_source: content
+
+Implement DependencyIndex struct: definitions HashMap<String, Vec<FunctionDef>>, sources HashMap<PathBuf, Vec<u8>>. from_config() recursively walks dependency paths, filters by language extension, runs CallAnalysis, builds index. resolve() takes CallSite + root imports, returns Vec<&FunctionDef> ordered by preference. Per-language by construction (cross-language resolution architecturally impossible). See spec "DependencyIndex".
