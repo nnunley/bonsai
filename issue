@@ -3,10 +3,11 @@ title: InlineConfig registry and inline_language\! macro
 status: blocked
 priority: medium
 created: 2026-03-29T17:43:52Z
-updated: 2026-03-29T17:45:59Z
+updated: 2026-03-29T17:46:00Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: 3aca02d
+blocks: 4846759
 
 Define InlineConfig struct: resolve_import fn, implicit_returns, inline_style, comment_prefix, skip_node_types. Define InlineStyle enum (Block, Expression, Wrapped). Implement inline_language\! macro for common case registration. Import resolution presets: dot_separated (Python), relative_path (JS), rust_use (Rust). Define CallInliner trait (can_inline, substitute) for edge cases. Implement get_inline_config() lookup. See spec "Registry: InlineConfig and Macro".
