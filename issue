@@ -3,9 +3,10 @@ title: queries/README.md: language integrator documentation
 status: open
 priority: medium
 created: 2026-03-29T17:45:40Z
-updated: 2026-03-29T17:45:40Z
+updated: 2026-03-29T17:46:03Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
+depends_on: c0d30f8
 
 Write queries/README.md documenting how to add a new language for inlining. Template for inlines.scm with all captures. Capture reference table (required/optional/grouped). Import resolution preset reference. Troubleshooting section. Testing instructions (bonsai check-queries). InlineConfig registration example. See call-inlining spec for content basis.
