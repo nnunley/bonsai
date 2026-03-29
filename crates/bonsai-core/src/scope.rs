@@ -2,6 +2,32 @@
 //!
 //! Builds a mapping of scopes, definitions, and references from a parse tree
 //! using the `@local.scope`, `@local.definition`, and `@local.reference` captures.
+//!
+//! # Running scope analysis on JavaScript
+//!
+//! ```
+//! use bonsai_core::scope::ScopeAnalysis;
+//!
+//! let lang = bonsai_core::languages::get_language("javascript").unwrap();
+//! let info = bonsai_core::languages::list_languages()
+//!     .into_iter()
+//!     .find(|l| l.name == "javascript")
+//!     .unwrap();
+//! let locals_scm = info.locals_scm_content.unwrap();
+//!
+//! let source = b"function foo() { let x = 1; return x; }";
+//! let tree = bonsai_core::parse::parse(source, &lang).unwrap();
+//!
+//! let analysis = ScopeAnalysis::from_tree(&tree, source, &lang, locals_scm).unwrap();
+//!
+//! // Should find the definition of `x` and its reference in `return x`
+//! assert!(!analysis.definitions.is_empty());
+//! assert!(!analysis.references.is_empty());
+//!
+//! // Find unreferenced definitions (there are none here — x is used)
+//! let dead = analysis.unreferenced_definitions();
+//! assert!(dead.iter().all(|d| d.name != "x"));
+//! ```
 
 use std::collections::HashMap;
 use tree_sitter::{Language, Query, QueryCursor, StreamingIterator, Tree};

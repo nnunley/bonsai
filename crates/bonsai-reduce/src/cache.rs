@@ -7,6 +7,24 @@ use xxhash_rust::xxh3::xxh3_64;
 /// Uses 64-bit hashes. Collisions are extremely rare (~1/2^64 per lookup)
 /// but can cause incorrect cache hits. The reducer re-verifies its final
 /// output to catch any corruption from collisions.
+///
+/// ```
+/// use bonsai_reduce::TestCache;
+///
+/// let mut cache = TestCache::new();
+///
+/// // First lookup is a miss
+/// assert_eq!(cache.get(b"x = 1"), None);
+///
+/// // Store and retrieve
+/// cache.put(b"x = 1", true);
+/// assert_eq!(cache.get(b"x = 1"), Some(true));
+///
+/// // Check hit rate
+/// assert_eq!(cache.hits(), 1);
+/// assert_eq!(cache.misses(), 1);
+/// assert!((cache.hit_rate() - 0.5).abs() < 0.01);
+/// ```
 pub struct TestCache {
     results: HashMap<u64, bool>,
     hits: u64,

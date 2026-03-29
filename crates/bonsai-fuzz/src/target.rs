@@ -16,6 +16,21 @@ pub enum InputMode {
 }
 
 /// Configuration for a fuzz target program.
+///
+/// ```no_run
+/// use std::time::Duration;
+/// use bonsai_fuzz::target::FuzzTarget;
+///
+/// // Auto-detect input mode: stdin by default, ArgReplace if "@@" is in args
+/// let target = FuzzTarget::new(
+///     vec!["my-compiler".into(), "@@".into()],
+///     Duration::from_secs(10),
+/// );
+///
+/// // Run the target with some input
+/// let result = target.run(b"test input").unwrap();
+/// println!("exit code: {:?}, timed out: {}", result.exit_code, result.timed_out);
+/// ```
 #[derive(Debug, Clone)]
 pub struct FuzzTarget {
     /// Command and arguments. Uses Command::new — no shell interpolation.

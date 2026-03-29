@@ -55,6 +55,45 @@ pub struct ReducerResult {
 ///
 /// Returns the reduced source that still passes the interestingness test,
 /// or the original source if no reductions were possible.
+///
+/// ```
+/// use std::sync::atomic::AtomicBool;
+/// use std::sync::Arc;
+/// use std::time::Duration;
+/// use bonsai_core::supertype::LanguageApiProvider;
+/// use bonsai_core::transforms::delete::DeleteTransform;
+/// use bonsai_reduce::reducer::{reduce, ReducerConfig};
+/// use bonsai_reduce::{InterestingnessTest, TestResult};
+///
+/// struct Contains(&'static [u8]);
+/// impl InterestingnessTest for Contains {
+///     fn test(&self, input: &[u8]) -> TestResult {
+///         if input.windows(self.0.len()).any(|w| w == self.0) {
+///             TestResult::Interesting
+///         } else {
+///             TestResult::NotInteresting
+///         }
+///     }
+/// }
+///
+/// let lang = bonsai_core::languages::get_language("python").unwrap();
+/// let config = ReducerConfig {
+///     language: lang.clone(),
+///     transforms: vec![Box::new(DeleteTransform)],
+///     provider: Box::new(LanguageApiProvider::new(&lang)),
+///     max_tests: 0,
+///     max_time: Duration::ZERO,
+///     jobs: 1,
+///     strict: true,
+///     interrupted: Arc::new(AtomicBool::new(false)),
+/// };
+///
+/// let source = b"x = 1\ny = 2\nz = 3\n";
+/// let result = reduce(source, &Contains(b"x = 1"), config, None);
+///
+/// assert!(result.source.len() < source.len());
+/// assert!(result.source.windows(5).any(|w| w == b"x = 1"));
+/// ```
 pub fn reduce(
     source: &[u8],
     test: &dyn InterestingnessTest,

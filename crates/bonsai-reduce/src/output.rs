@@ -2,6 +2,20 @@ use std::io::{self, Write};
 use std::path::Path;
 
 /// Where to write the reduced output.
+///
+/// ```
+/// use bonsai_reduce::OutputTarget;
+/// use bonsai_reduce::write_output;
+///
+/// // Write to a temporary file
+/// let dir = tempfile::tempdir().unwrap();
+/// let path = dir.path().join("reduced.py");
+/// let target = OutputTarget::File(path.to_string_lossy().to_string());
+/// write_output(b"x = 1\n", &target).unwrap();
+///
+/// let content = std::fs::read(&path).unwrap();
+/// assert_eq!(content, b"x = 1\n");
+/// ```
 pub enum OutputTarget {
     /// Write to stdout.
     Stdout,

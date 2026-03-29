@@ -149,7 +149,7 @@ git issue topo              # full execution order
 git issue deps --dot        # graphviz dependency graph
 ```
 
-See [AGENTS.md](AGENTS.md) for development workflow and [openspec/](openspec/changes/add-bonsai-core/) for the full spec.
+See [USAGE.md](USAGE.md) for the full usage guide, [AGENTS.md](AGENTS.md) for development workflow, and [openspec/](openspec/changes/add-bonsai-core/) for the full spec.
 
 ## License
 

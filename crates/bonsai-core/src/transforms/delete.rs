@@ -5,6 +5,25 @@ use tree_sitter::{Node, Tree};
 
 /// Proposes deleting a named node by replacing its byte range with empty bytes.
 /// Does NOT check validity — the caller must validate via reparsing.
+///
+/// ```
+/// use bonsai_core::transform::Transform;
+/// use bonsai_core::transforms::delete::DeleteTransform;
+/// use bonsai_core::supertype::EmptyProvider;
+///
+/// let lang = bonsai_core::languages::get_language("python").unwrap();
+/// let source = b"x = 1\ny = 2";
+/// let tree = bonsai_core::parse::parse(source, &lang).unwrap();
+///
+/// let transform = DeleteTransform;
+/// let provider = EmptyProvider;
+///
+/// // Delete proposals for the second statement
+/// let second = tree.root_node().named_child(1).unwrap();
+/// let candidates = transform.candidates(&second, source, &tree, &provider);
+/// assert_eq!(candidates.len(), 1);
+/// assert!(candidates[0].new_bytes.is_empty()); // deletion = empty replacement
+/// ```
 pub struct DeleteTransform;
 
 impl Transform for DeleteTransform {

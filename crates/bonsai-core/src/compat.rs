@@ -2,6 +2,49 @@
 //!
 //! Determines which node types can legally replace a given node in the tree,
 //! using supertype relationships from a [`SupertypeProvider`].
+//!
+//! # Checking compatibility between node types
+//!
+//! ```
+//! use bonsai_core::compat::is_compatible_replacement;
+//! use bonsai_core::supertype::LanguageApiProvider;
+//!
+//! let lang = bonsai_core::languages::get_language("python").unwrap();
+//! let provider = LanguageApiProvider::new(&lang);
+//!
+//! let identifier = lang.id_for_node_kind("identifier", true);
+//! let string = lang.id_for_node_kind("string", true);
+//!
+//! // Same type is always compatible
+//! assert!(is_compatible_replacement(identifier, identifier, &provider));
+//!
+//! // identifier and string share expression supertypes in Python
+//! assert!(is_compatible_replacement(identifier, string, &provider));
+//! ```
+//!
+//! # Finding all compatible replacements for a node
+//!
+//! ```
+//! use bonsai_core::compat::compatible_replacements;
+//! use bonsai_core::supertype::{LanguageApiProvider, EmptyProvider, SupertypeProvider};
+//!
+//! let lang = bonsai_core::languages::get_language("python").unwrap();
+//! let source = b"x = 1";
+//! let tree = bonsai_core::parse::parse(source, &lang).unwrap();
+//! let root = tree.root_node();
+//!
+//! // With EmptyProvider, no replacements are found
+//! let empty = EmptyProvider;
+//! assert!(compatible_replacements(&root, &empty).is_empty());
+//!
+//! // With LanguageApiProvider, expression nodes have compatible siblings
+//! let provider = LanguageApiProvider::new(&lang);
+//! let id_kind = lang.id_for_node_kind("identifier", true);
+//! let replacements = provider.subtypes_for(
+//!     *provider.supertypes_for(id_kind).first().unwrap()
+//! );
+//! assert!(!replacements.is_empty());
+//! ```
 
 use tree_sitter::Node;
 

@@ -15,6 +15,30 @@ use crate::validity::Replacement;
 ///
 /// Implements `on_reduction` to recompute dead ranges after each accepted
 /// reduction, so newly-dead definitions are caught as the source shrinks.
+///
+/// ```
+/// use bonsai_core::scope::ScopeAnalysis;
+/// use bonsai_core::transforms::dead_definition::DeadDefinitionTransform;
+/// use bonsai_core::transform::Transform;
+/// use bonsai_core::supertype::EmptyProvider;
+///
+/// let lang = bonsai_core::languages::get_language("javascript").unwrap();
+/// let info = bonsai_core::languages::list_languages()
+///     .into_iter()
+///     .find(|l| l.name == "javascript")
+///     .unwrap();
+/// let locals_scm = info.locals_scm_content.unwrap();
+///
+/// let source = b"function foo() { let unused = 1; let used = 2; return used; }";
+/// let tree = bonsai_core::parse::parse(source, &lang).unwrap();
+/// let analysis = ScopeAnalysis::from_tree(&tree, source, &lang, locals_scm).unwrap();
+///
+/// let transform = DeadDefinitionTransform::from_analysis(&analysis, &tree, locals_scm);
+/// let provider = EmptyProvider;
+///
+/// // The transform will propose deleting the statement containing "unused"
+/// // when the matching node is visited during reduction.
+/// ```
 pub struct DeadDefinitionTransform {
     /// Byte ranges of unreferenced definition statements.
     /// Recomputed after each accepted reduction via `on_reduction`.
