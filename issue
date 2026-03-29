@@ -8,5 +8,6 @@ author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: 08aa1a5,3b003c7
+blocks: 6a15b5a
 
 Implement DependencyIndex struct: definitions HashMap<String, Vec<FunctionDef>>, sources HashMap<PathBuf, Vec<u8>>. from_config() recursively walks dependency paths, filters by language extension, runs CallAnalysis, builds index. resolve() takes CallSite + root imports, returns Vec<&FunctionDef> ordered by preference. Per-language by construction (cross-language resolution architecturally impossible). See spec "DependencyIndex".
