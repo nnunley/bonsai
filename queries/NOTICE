@@ -1,0 +1,9 @@
+Query files in this directory are derived from upstream tree-sitter grammar
+repositories. All upstream grammars are MIT-licensed.
+
+javascript/locals.scm — tree-sitter-javascript, Copyright (c) 2014 Max Brunsfeld
+javascript/tags.scm   — tree-sitter-javascript, Copyright (c) 2014 Max Brunsfeld
+python/tags.scm       — tree-sitter-python, Copyright (c) 2016 Max Brunsfeld
+rust/tags.scm         — tree-sitter-rust, Copyright (c) 2017 Maxim Sokolov
+
+See each grammar's LICENSE file for the full MIT license text.
