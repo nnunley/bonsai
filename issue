@@ -1,0 +1,11 @@
+id: 6a15b5a
+title: CallInlineTransform: inline dependency code into root files
+status: open
+priority: medium
+created: 2026-03-29T17:44:23Z
+updated: 2026-03-29T17:44:23Z
+author: Norman Nunley, Jr
+assignee: Norman Nunley, Jr
+hash_source: content
+
+Implement CallInlineTransform with inline_root() method. One rewrite per parse cycle. Algorithm: parse root, run CallAnalysis, check same-file defs first, then DependencyIndex. Skip checks: node type, NoLocalsScmWithParams, PartiallyCapturedParams. For each candidate: extract body, transform returns, substitute params, prepend annotation ({comment_prefix}inlined: file:name), reparse check, write to ProjectFileSet, run interestingness test, rollback on failure. Budget-aware (max_tests, max_time). See spec "CallInlineTransform" and "Algorithm".
