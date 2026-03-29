@@ -3,10 +3,11 @@ title: bonsai check-queries subcommand
 status: blocked
 priority: medium
 created: 2026-03-29T17:45:31Z
-updated: 2026-03-29T17:46:03Z
+updated: 2026-03-29T17:46:04Z
 author: Norman Nunley, Jr
 assignee: Norman Nunley, Jr
 hash_source: content
 depends_on: b1a0069
+blocks: 405db9e
 
 Add bonsai check-queries --lang <name> [sample_file] subcommand. Validates query files (locals.scm, tags.scm, inlines.scm) for a language. Reports capture presence/absence, capability enablement/disablement. If sample file provided, runs queries and shows match counts per capture. Useful feedback loop for writing inlines.scm. See call-inlining spec "CLI" section.
