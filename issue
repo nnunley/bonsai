@@ -1,6 +1,6 @@
 id: b1a0069
 title: Build-time inlines.scm validation and InlineCapabilities codegen
-status: open
+status: blocked
 priority: medium
 created: 2026-03-29T17:43:33Z
 updated: 2026-03-29T17:45:57Z
