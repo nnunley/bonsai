@@ -11,6 +11,8 @@ xxhash-rust = { workspace = true }
 tempfile = { workspace = true }
 rayon = { workspace = true }
 wait-timeout = { workspace = true }
+toml = { workspace = true }
+serde = { workspace = true }
 
 [dev-dependencies]
 hegeltest = "0.3.0"

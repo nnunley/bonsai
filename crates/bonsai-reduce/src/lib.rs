@@ -67,13 +67,18 @@
 //! ```
 
 pub mod cache;
+pub mod config;
 pub mod interest;
 pub mod output;
 pub mod progress;
+pub mod project;
 pub mod queue;
 pub mod reducer;
 
 pub use cache::TestCache;
-pub use interest::{InterestingnessTest, ShellTest, TestResult};
+pub use config::{
+    BonsaiConfig, CliOverrides, ConfigError, DependencyConfig, MergedConfig,
+};
+pub use interest::{InterestingnessTest, ProjectTest, ShellTest, TestResult};
 pub use output::{write_output, OutputTarget};
 pub use progress::{ProgressCallback, ProgressReporter, ProgressStats};
