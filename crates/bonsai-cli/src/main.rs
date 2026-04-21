@@ -78,6 +78,10 @@ struct ReduceArgs {
     #[arg(long)]
     strict: bool,
 
+    /// Abort after N consecutive test errors (0 = unlimited)
+    #[arg(long, default_value = "3")]
+    max_test_errors: usize,
+
     /// Suppress progress output
     #[arg(short, long)]
     quiet: bool,
@@ -146,6 +150,7 @@ fn cmd_reduce(args: ReduceArgs) {
         max_time,
         test_timeout,
         strict,
+        max_test_errors,
         quiet,
         verbose,
         input,
@@ -287,6 +292,7 @@ fn cmd_reduce(args: ReduceArgs) {
         max_time: max_time_dur,
         jobs,
         strict,
+        max_test_errors,
         interrupted: interrupt.as_atomic(),
     };
 

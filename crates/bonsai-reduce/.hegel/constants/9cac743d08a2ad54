@@ -1,0 +1,4 @@
+# file: /Users/ndn/development/bonsai/crates/bonsai-reduce/.hegel/venv/bin/hegel
+# hypothesis_version: 6.151.12
+
+['-script.pyw', '.exe', '__main__']

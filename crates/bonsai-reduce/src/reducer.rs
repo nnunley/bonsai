@@ -32,6 +32,11 @@ pub struct ReducerConfig {
     pub jobs: usize,
     /// If true, reject any ERROR/MISSING nodes. If false, only reject NEW errors.
     pub strict: bool,
+    /// Maximum consecutive test errors before aborting (0 = unlimited).
+    /// When the test infrastructure returns `Error` this many times in a row,
+    /// the reducer stops. A successful `Interesting` or `NotInteresting` result
+    /// resets the counter.
+    pub max_test_errors: usize,
     /// Interrupt flag: when set to true, the reduction loop will stop at the next
     /// opportunity. Typically set by a SIGINT handler in the CLI.
     pub interrupted: Arc<AtomicBool>,
@@ -85,6 +90,7 @@ pub struct ReducerResult {
 ///     max_time: Duration::ZERO,
 ///     jobs: 1,
 ///     strict: true,
+///     max_test_errors: 0,
 ///     interrupted: Arc::new(AtomicBool::new(false)),
 /// };
 ///
@@ -181,6 +187,9 @@ pub fn reduce(
     // Build priority queue
     let mut queue = ReductionQueue::from_tree(&tree);
 
+    // Consecutive test error counter for error tolerance
+    let mut consecutive_errors: usize = 0;
+
     // Main reduction loop
     loop {
         // Check termination bounds
@@ -191,6 +200,15 @@ pub fn reduce(
             break;
         }
         if config.max_time > Duration::ZERO && start.elapsed() >= config.max_time {
+            break;
+        }
+        if config.max_test_errors > 0 && consecutive_errors >= config.max_test_errors {
+            if let Some(p) = progress {
+                p.on_warning(&format!(
+                    "aborting: {} consecutive test errors",
+                    consecutive_errors
+                ));
+            }
             break;
         }
         // Pop next entry
@@ -236,6 +254,7 @@ pub fn reduce(
         let winning_source = if let Some(ref pool) = pool {
             // Parallel path: test all valid candidates concurrently
             let atomic_tests = AtomicUsize::new(0);
+            let atomic_errors = AtomicUsize::new(consecutive_errors);
             let abort_flag = AtomicBool::new(false);
 
             let winner = pool.install(|| {
@@ -268,17 +287,20 @@ pub fn reduce(
                         let result = test.test(new_source);
                         match &result {
                             TestResult::Error(msg) => {
+                                atomic_errors.fetch_add(1, Ordering::Relaxed);
                                 if let Some(p) = progress {
                                     p.on_warning(&format!("test error: {}", msg));
                                 }
                                 false
                             }
                             TestResult::Interesting => {
+                                atomic_errors.store(0, Ordering::Relaxed);
                                 let mut cache = cache_mutex.lock().unwrap();
                                 cache.put(new_source, true);
                                 true
                             }
                             TestResult::NotInteresting => {
+                                atomic_errors.store(0, Ordering::Relaxed);
                                 let mut cache = cache_mutex.lock().unwrap();
                                 cache.put(new_source, false);
                                 false
@@ -289,6 +311,7 @@ pub fn reduce(
             });
 
             tests_run += atomic_tests.load(Ordering::Relaxed);
+            consecutive_errors = atomic_errors.load(Ordering::Relaxed);
             winner
         } else {
             // Sequential path: test one at a time
@@ -319,20 +342,31 @@ pub fn reduce(
                 // Run test
                 tests_run += 1;
                 let test_result = test.test(new_source);
-                if let TestResult::Error(msg) = &test_result {
-                    if let Some(p) = progress {
-                        p.on_warning(&format!("test error: {}", msg));
+                match &test_result {
+                    TestResult::Error(msg) => {
+                        consecutive_errors += 1;
+                        if let Some(p) = progress {
+                            p.on_warning(&format!("test error: {}", msg));
+                        }
+                        if config.max_test_errors > 0
+                            && consecutive_errors >= config.max_test_errors
+                        {
+                            break;
+                        }
+                        continue;
                     }
-                    continue;
-                }
-                let interesting = matches!(test_result, TestResult::Interesting);
-                {
-                    let mut cache = cache_mutex.lock().unwrap();
-                    cache.put(new_source, interesting);
-                }
-                if interesting {
-                    winner = Some(new_source.clone());
-                    break;
+                    TestResult::Interesting => {
+                        consecutive_errors = 0;
+                        let mut cache = cache_mutex.lock().unwrap();
+                        cache.put(new_source, true);
+                        winner = Some(new_source.clone());
+                        break;
+                    }
+                    TestResult::NotInteresting => {
+                        consecutive_errors = 0;
+                        let mut cache = cache_mutex.lock().unwrap();
+                        cache.put(new_source, false);
+                    }
                 }
             }
             winner
@@ -472,6 +506,7 @@ mod tests {
             max_time: Duration::ZERO,
             jobs: 1,
             strict,
+            max_test_errors: 0,
             interrupted: Arc::new(AtomicBool::new(false)),
         }
     }
@@ -708,6 +743,94 @@ mod tests {
             "Should run exactly one test (initial validation)"
         );
         assert_eq!(result.reductions, 0);
+    }
+
+    /// Test that alternates between Error and NotInteresting, so errors are never consecutive.
+    struct AlternatingErrorTest {
+        call_count: AtomicUsize,
+    }
+
+    impl AlternatingErrorTest {
+        fn new() -> Self {
+            Self {
+                call_count: AtomicUsize::new(0),
+            }
+        }
+    }
+
+    impl InterestingnessTest for AlternatingErrorTest {
+        fn test(&self, _input: &[u8]) -> TestResult {
+            let count = self.call_count.fetch_add(1, Ordering::Relaxed);
+            if count == 0 {
+                // Initial validation must pass
+                TestResult::Interesting
+            } else if count % 2 == 1 {
+                TestResult::Error("simulated error".into())
+            } else {
+                TestResult::NotInteresting
+            }
+        }
+    }
+
+    #[test]
+    fn test_reducer_aborts_after_consecutive_errors() {
+        let lang = bonsai_core::languages::get_language("python").unwrap();
+        // Use enough code to generate many candidates
+        let source = b"x = 1\ny = 2\nz = 3\nw = 4\na = 5\nb = 6\n";
+
+        // This test returns Interesting on first call (initial validation),
+        // then Error on all subsequent calls.
+        struct ConsecutiveErrorTest {
+            call_count: AtomicUsize,
+        }
+        impl InterestingnessTest for ConsecutiveErrorTest {
+            fn test(&self, _input: &[u8]) -> TestResult {
+                let count = self.call_count.fetch_add(1, Ordering::Relaxed);
+                if count == 0 {
+                    TestResult::Interesting
+                } else {
+                    TestResult::Error("simulated error".into())
+                }
+            }
+        }
+
+        let test = ConsecutiveErrorTest {
+            call_count: AtomicUsize::new(0),
+        };
+        let mut config = make_config(lang, true);
+        config.max_test_errors = 3;
+
+        let result = reduce(source, &test, config, None);
+        // Should have aborted — returned original source (no reductions)
+        assert_eq!(result.reductions, 0, "Should not have accepted any reductions");
+        // Should have run a bounded number of tests (initial + a few errors), not exhausted all candidates
+        assert!(
+            result.tests_run <= 10,
+            "Should abort early after consecutive errors, ran {} tests",
+            result.tests_run
+        );
+    }
+
+    #[test]
+    fn test_non_consecutive_errors_do_not_abort() {
+        let lang = bonsai_core::languages::get_language("python").unwrap();
+        let source = b"x = 1\ny = 2\nz = 3\nw = 4\n";
+
+        // Alternates Error / NotInteresting after initial Interesting.
+        // Errors are never consecutive, so should NOT abort.
+        let test = AlternatingErrorTest::new();
+        let mut config = make_config(lang, true);
+        config.max_test_errors = 2;
+
+        let result = reduce(source, &test, config, None);
+        // Should have processed candidates without aborting early.
+        // The key assertion: it ran more tests than max_test_errors + 1,
+        // meaning it didn't abort after seeing errors.
+        assert!(
+            result.tests_run > 3,
+            "Should NOT abort on non-consecutive errors, ran {} tests",
+            result.tests_run
+        );
     }
 
     #[test]

@@ -222,6 +222,7 @@ fn main() {
         max_time: Duration::from_secs(300), // 5 minute limit
         jobs: 4,
         strict: true,
+        max_test_errors: 0, // unlimited
         interrupted: Arc::new(AtomicBool::new(false)),
     };
 

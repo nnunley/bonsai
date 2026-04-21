@@ -105,6 +105,7 @@ fn make_config(lang_name: &str, strict: bool) -> ReducerConfig {
         max_time: Duration::from_secs(5),
         jobs: 1,
         strict,
+        max_test_errors: 0,
         interrupted: Arc::new(AtomicBool::new(false)),
     }
 }
