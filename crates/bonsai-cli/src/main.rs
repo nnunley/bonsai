@@ -235,13 +235,23 @@ fn cmd_reduce(args: ReduceArgs) {
         }
     });
 
-    // Set up provider: LanguageApiProvider → NodeTypesProvider (chain)
+    // Set up provider chain (resolved in this order, results merged):
+    //   1. LanguageApiProvider    — runtime tree-sitter Language::supertypes()
+    //   2. NodeTypesProvider      — parsed from node-types.json at build
+    //   3. ConfigSupertypeProvider — hand-declared in grammars.toml
+    //
+    // The config provider is the escape hatch for grammars (like
+    // tree-sitter-clojure) where the first two return nothing.
     let api_provider = bonsai_core::supertype::LanguageApiProvider::new(&language);
     let ntp_provider = bonsai_core::supertype::NodeTypesProvider::new(&language, &lang_name);
-    let has_supertypes = api_provider.has_supertypes() || ntp_provider.has_supertypes();
+    let cfg_provider = bonsai_core::supertype::ConfigSupertypeProvider::new(&language, &lang_name);
+    let has_supertypes = api_provider.has_supertypes()
+        || ntp_provider.has_supertypes()
+        || cfg_provider.has_supertypes();
     let provider = bonsai_core::supertype::ChainProvider::new(vec![
         Box::new(api_provider),
         Box::new(ntp_provider),
+        Box::new(cfg_provider),
     ]);
     if !has_supertypes {
         eprintln!(

@@ -16,6 +16,19 @@ struct LanguageEntry {
     extensions: Vec<String>,
     src: String,
     queries: Option<String>,
+    /// Hand-declared supertype mappings for grammars whose
+    /// node-types.json does not declare them and whose runtime
+    /// Language::supertypes() returns empty (e.g., tree-sitter-clojure).
+    ///
+    /// Shape: { supertype_name => [subtype_name, ...] }
+    ///
+    /// Semantic: declaring `X = ["A", "B"]` means a node of kind A can
+    /// replace a node of kind B (and vice versa) at any syntactic
+    /// position. **Only declare supertypes whose subtypes are
+    /// grammatically interchangeable in every position**, or the
+    /// Unwrap transform may produce candidates that parse but are
+    /// semantically broken.
+    supertypes: Option<std::collections::BTreeMap<String, Vec<String>>>,
 }
 
 fn main() {
@@ -306,6 +319,67 @@ fn generate_languages_rs(out_dir: &Path, languages: &[LanguageEntry], workspace_
     for lang in languages {
         let grammar_dir = workspace_root.join(&lang.grammar);
         let mappings = parse_node_types(&grammar_dir, &lang.src);
+
+        if mappings.is_empty() {
+            writeln!(
+                code,
+                "        \"{}\" => &[],",
+                escape_rust_string(&lang.name)
+            )
+            .unwrap();
+        } else {
+            writeln!(code, "        \"{}\" => &[", escape_rust_string(&lang.name)).unwrap();
+            for (supertype, subtypes) in &mappings {
+                let subtypes_str = subtypes
+                    .iter()
+                    .map(|s| format!("\"{}\"", escape_rust_string(s)))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                writeln!(
+                    code,
+                    "            (\"{}\", &[{}]),",
+                    escape_rust_string(supertype),
+                    subtypes_str
+                )
+                .unwrap();
+            }
+            writeln!(code, "        ],").unwrap();
+        }
+    }
+
+    writeln!(code, "        _ => &[],").unwrap();
+    writeln!(code, "    }}").unwrap();
+    writeln!(code, "}}").unwrap();
+
+    // Generate config-declared supertype mappings per language.
+    // These come from the optional [language.supertypes] table in
+    // grammars.toml. They're meant for grammars that don't declare
+    // supertypes in their own node-types.json (e.g. Clojure).
+    writeln!(code).unwrap();
+    writeln!(
+        code,
+        "/// Get hand-declared supertype mappings from grammars.toml for a language."
+    )
+    .unwrap();
+    writeln!(code, "/// Returns (supertype_name, [subtype_names]) pairs.").unwrap();
+    writeln!(
+        code,
+        "/// See [LanguageEntry::supertypes] in build.rs for soundness contract."
+    )
+    .unwrap();
+    writeln!(
+        code,
+        "pub fn get_config_supertypes(name: &str) -> &'static [(&'static str, &'static [&'static str])] {{"
+    )
+    .unwrap();
+    writeln!(code, "    match name {{").unwrap();
+
+    for lang in languages {
+        let mappings: Vec<(String, Vec<String>)> = lang
+            .supertypes
+            .as_ref()
+            .map(|m| m.iter().map(|(k, v)| (k.clone(), v.clone())).collect())
+            .unwrap_or_default();
 
         if mappings.is_empty() {
             writeln!(
