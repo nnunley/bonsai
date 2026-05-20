@@ -193,8 +193,8 @@ fn generate_languages_rs(out_dir: &Path, languages: &[LanguageEntry], workspace_
         }
     }
 
-    // extern "C" declarations
-    writeln!(code, "extern \"C\" {{").unwrap();
+    // extern "C" declarations (edition 2024 requires `unsafe extern`)
+    writeln!(code, "unsafe extern \"C\" {{").unwrap();
     for lang in languages {
         writeln!(code, "    fn tree_sitter_{}() -> *const ();", lang.name).unwrap();
     }

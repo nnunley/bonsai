@@ -458,8 +458,8 @@ mod tests {
     use bonsai_core::supertype::LanguageApiProvider;
     use bonsai_core::transforms::delete::DeleteTransform;
     use bonsai_core::transforms::unwrap::UnwrapTransform;
-    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
     use std::sync::Arc;
+    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
     /// Test that checks if a specific string is present in the input.
     struct ContainsTest {

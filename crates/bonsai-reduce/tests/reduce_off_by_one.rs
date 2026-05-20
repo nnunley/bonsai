@@ -8,8 +8,8 @@
 //! answer). Bonsai must preserve the buggy computation to maintain this output, so the
 //! reduced program contains the root cause.
 
-use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 use bonsai_core::languages;
@@ -17,7 +17,7 @@ use bonsai_core::supertype::LanguageApiProvider;
 use bonsai_core::transforms::delete::DeleteTransform;
 use bonsai_core::transforms::unwrap::UnwrapTransform;
 use bonsai_reduce::interest::{InterestingnessTest, TestResult};
-use bonsai_reduce::reducer::{reduce, ReducerConfig};
+use bonsai_reduce::reducer::{ReducerConfig, reduce};
 
 /// Interestingness test: the program must produce exactly "[2, 4, 6, 8]" on stdout.
 /// This is the wrong output from the off-by-one bug — [1,2,3,4,5] doubled should be

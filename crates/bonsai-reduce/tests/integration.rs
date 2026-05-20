@@ -1,7 +1,7 @@
 //! Integration tests for the bonsai reducer.
 
-use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 use bonsai_core::languages;
@@ -9,7 +9,7 @@ use bonsai_core::supertype::{EmptyProvider, LanguageApiProvider};
 use bonsai_core::transforms::delete::DeleteTransform;
 use bonsai_core::transforms::unwrap::UnwrapTransform;
 use bonsai_reduce::interest::ShellTest;
-use bonsai_reduce::reducer::{reduce, ReducerConfig};
+use bonsai_reduce::reducer::{ReducerConfig, reduce};
 
 fn make_config(lang_name: &str, strict: bool) -> ReducerConfig {
     let language = languages::get_language(lang_name).unwrap();

@@ -96,7 +96,7 @@ impl FuzzTarget {
             None => {
                 return Err(TargetError {
                     message: "command is empty".into(),
-                })
+                });
             }
         };
 
@@ -111,15 +111,15 @@ impl FuzzTarget {
             })?;
 
         // Write input to stdin then close it
-        if let Some(mut stdin) = child.stdin.take() {
-            if let Err(e) = stdin.write_all(input) {
-                // Kill the child since it didn't receive full input
-                let _ = child.kill();
-                let _ = child.wait();
-                return Err(TargetError {
-                    message: format!("failed to write to stdin: {e}"),
-                });
-            }
+        if let Some(mut stdin) = child.stdin.take()
+            && let Err(e) = stdin.write_all(input)
+        {
+            // Kill the child since it didn't receive full input
+            let _ = child.kill();
+            let _ = child.wait();
+            return Err(TargetError {
+                message: format!("failed to write to stdin: {e}"),
+            });
         }
 
         Self::collect_result(child, self.timeout)
@@ -146,7 +146,7 @@ impl FuzzTarget {
             None => {
                 return Err(TargetError {
                     message: "command is empty".into(),
-                })
+                });
             }
         };
 

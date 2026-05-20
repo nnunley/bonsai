@@ -7,6 +7,11 @@ license.workspace = true
 [dependencies]
 tree-sitter = { workspace = true }
 tree-sitter-language = "0.1"
+# Runtime deps for the `project` module — loads bonsai.toml.
+# Same versions as the build script so the workspace doesn't pull
+# in two copies.
+toml = "0.8"
+serde = { version = "1", features = ["derive"] }
 
 [build-dependencies]
 cc = "1"

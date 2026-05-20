@@ -1,8 +1,8 @@
 use clap::{Args, Parser, Subcommand};
 use std::path::PathBuf;
 use std::process;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 /// Encapsulates interrupt flag creation and signal handler registration.
@@ -235,23 +235,70 @@ fn cmd_reduce(args: ReduceArgs) {
         }
     });
 
-    // Set up provider chain (resolved in this order, results merged):
-    //   1. LanguageApiProvider    — runtime tree-sitter Language::supertypes()
-    //   2. NodeTypesProvider      — parsed from node-types.json at build
-    //   3. ConfigSupertypeProvider — hand-declared in grammars.toml
+    // Discover per-project bonsai.toml. The config lives alongside
+    // the project tree and extends bonsai's built-in scope-analysis
+    // patterns + supertype declarations with project-specific
+    // knowledge (e.g., custom defining-form macros).
     //
-    // The config provider is the escape hatch for grammars (like
-    // tree-sitter-clojure) where the first two return nothing.
+    // Walking starts from the input file's directory and walks upward
+    // until a bonsai.toml is found or the filesystem root is reached.
+    let project_config = {
+        let start = input
+            .canonicalize()
+            .ok()
+            .and_then(|p| p.parent().map(|p| p.to_path_buf()))
+            .unwrap_or_else(|| std::path::PathBuf::from("."));
+        match bonsai_core::project::discover_and_load(&start) {
+            Ok(Some((path, config))) => {
+                eprintln!("bonsai: using project config {}", path.display());
+                Some(config)
+            }
+            Ok(None) => None,
+            Err(e) => {
+                eprintln!("bonsai: warning: {}", e);
+                None
+            }
+        }
+    };
+
+    // Extract the language-specific section of the project config (if any).
+    let project_lang_config = project_config
+        .as_ref()
+        .and_then(|c| c.languages.get(&lang_name));
+
+    // Set up provider chain (resolved in this order, results merged):
+    //   1. LanguageApiProvider     — runtime tree-sitter Language::supertypes()
+    //   2. NodeTypesProvider       — parsed from node-types.json at build
+    //   3. ConfigSupertypeProvider — hand-declared in grammars.toml
+    //   4. ProjectSupertypeProvider — declared in bonsai.toml (per-project)
+    //
+    // Providers 3 & 4 are escape hatches for grammars (like
+    // tree-sitter-clojure) where the first two return nothing, and for
+    // projects that know context the grammar can't see.
     let api_provider = bonsai_core::supertype::LanguageApiProvider::new(&language);
     let ntp_provider = bonsai_core::supertype::NodeTypesProvider::new(&language, &lang_name);
     let cfg_provider = bonsai_core::supertype::ConfigSupertypeProvider::new(&language, &lang_name);
+    let project_supertype_mappings: Vec<(String, Vec<String>)> = project_lang_config
+        .map(|c| {
+            c.supertypes
+                .iter()
+                .map(|(k, v)| (k.clone(), v.clone()))
+                .collect()
+        })
+        .unwrap_or_default();
+    let project_provider = bonsai_core::supertype::ProjectSupertypeProvider::new(
+        &language,
+        &project_supertype_mappings,
+    );
     let has_supertypes = api_provider.has_supertypes()
         || ntp_provider.has_supertypes()
-        || cfg_provider.has_supertypes();
+        || cfg_provider.has_supertypes()
+        || project_provider.has_supertypes();
     let provider = bonsai_core::supertype::ChainProvider::new(vec![
         Box::new(api_provider),
         Box::new(ntp_provider),
         Box::new(cfg_provider),
+        Box::new(project_provider),
     ]);
     if !has_supertypes {
         eprintln!(
@@ -266,33 +313,60 @@ fn cmd_reduce(args: ReduceArgs) {
         Box::new(bonsai_core::transforms::unwrap::UnwrapTransform),
     ];
 
-    // Check if this language has locals.scm for scope-aware transforms
+    // Check if this language has locals.scm for scope-aware transforms.
+    // If the project config declares extra defining-form rules, merge
+    // them into the locals.scm before scope analysis runs. This is
+    // what lets a project teach bonsai about its own macros (e.g.
+    // `defcreature`, `defcomponent`) without forking the queries.
     let lang_info = bonsai_core::languages::list_languages()
         .iter()
         .find(|l| l.name == lang_name);
-    if let Some(info) = lang_info {
-        if let Some(locals_content) = info.locals_scm {
-            if let Some(tree) = bonsai_core::parse::parse(&source, &language) {
-                if let Some(analysis) = bonsai_core::scope::ScopeAnalysis::from_tree(
-                    &tree,
-                    &source,
-                    &language,
-                    locals_content,
-                ) {
-                    let dead_defs = analysis.unreferenced_definitions();
-                    if !dead_defs.is_empty() {
-                        eprintln!(
-                            "bonsai: found {} unreferenced definitions via scope analysis",
-                            dead_defs.len()
-                        );
-                    }
-                    transforms.push(Box::new(
-                        bonsai_core::transforms::dead_definition::DeadDefinitionTransform::from_analysis(
-                            &analysis, &tree, locals_content,
-                        ),
-                    ));
-                }
+    if let Some(info) = lang_info
+        && let Some(base_locals) = info.locals_scm
+    {
+        // Compose locals.scm: base + project extensions (if any).
+        let project_rules: &[bonsai_core::project::DefiningFormRule] = project_lang_config
+            .map(|c| c.defining_forms.as_slice())
+            .unwrap_or(&[]);
+        let merged_locals_owned =
+            bonsai_core::project::merge_locals_scm(base_locals, project_rules);
+        // We need a &str with a lifetime tied to either `info` (the
+        // embedded base) or the new owned String. Bind once for use
+        // below.
+        let locals_content: &str = match &merged_locals_owned {
+            Some(s) => s.as_str(),
+            None => base_locals,
+        };
+
+        if !project_rules.is_empty() {
+            eprintln!(
+                "bonsai: bonsai.toml adds {} defining-form rule(s) to locals.scm",
+                project_rules.len()
+            );
+        }
+
+        if let Some(tree) = bonsai_core::parse::parse(&source, &language)
+            && let Some(analysis) = bonsai_core::scope::ScopeAnalysis::from_tree(
+                &tree,
+                &source,
+                &language,
+                locals_content,
+            )
+        {
+            let dead_defs = analysis.unreferenced_definitions();
+            if !dead_defs.is_empty() {
+                eprintln!(
+                    "bonsai: found {} unreferenced definitions via scope analysis",
+                    dead_defs.len()
+                );
             }
+            transforms.push(Box::new(
+                bonsai_core::transforms::dead_definition::DeadDefinitionTransform::from_analysis(
+                    &analysis,
+                    &tree,
+                    locals_content,
+                ),
+            ));
         }
     }
 

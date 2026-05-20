@@ -53,10 +53,11 @@ pub fn find_node_at<'a>(node: Node<'a>, start: usize, end: usize) -> Option<Node
     if cursor.goto_first_child() {
         loop {
             let child = cursor.node();
-            if child.start_byte() <= start && child.end_byte() >= end {
-                if let result @ Some(_) = find_node_at(child, start, end) {
-                    return result;
-                }
+            if child.start_byte() <= start
+                && child.end_byte() >= end
+                && let result @ Some(_) = find_node_at(child, start, end)
+            {
+                return result;
             }
             if !cursor.goto_next_sibling() {
                 break;

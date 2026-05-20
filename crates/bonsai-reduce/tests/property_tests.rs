@@ -1,7 +1,7 @@
 //! Property-based tests for bonsai-reduce using Hegel.
 
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::time::Duration;
 
 use bonsai_core::supertype::LanguageApiProvider;
@@ -10,9 +10,9 @@ use bonsai_core::transforms::unwrap::UnwrapTransform;
 use bonsai_reduce::cache::TestCache;
 use bonsai_reduce::interest::{InterestingnessTest, TestResult};
 use bonsai_reduce::queue::ReductionQueue;
-use bonsai_reduce::reducer::{reduce, ReducerConfig};
-use hegel::generators::integers;
+use bonsai_reduce::reducer::{ReducerConfig, reduce};
 use hegel::TestCase;
+use hegel::generators::integers;
 
 // --- Generators ---
 

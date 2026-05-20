@@ -79,5 +79,5 @@ pub mod reducer;
 pub use cache::TestCache;
 pub use config::{BonsaiConfig, CliOverrides, ConfigError, DependencyConfig, MergedConfig};
 pub use interest::{InterestingnessTest, ProjectTest, ShellTest, TestResult};
-pub use output::{write_output, OutputTarget};
+pub use output::{OutputTarget, write_output};
 pub use progress::{ProgressCallback, ProgressReporter, ProgressStats};

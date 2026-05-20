@@ -358,6 +358,83 @@ impl SupertypeProvider for ConfigSupertypeProvider {
     }
 }
 
+/// Provides supertype relationships declared in a per-project
+/// `bonsai.toml`. Structurally identical to [`ConfigSupertypeProvider`],
+/// but receives its mappings at runtime (from the discovered project
+/// config) rather than from the build-time `grammars.toml`.
+///
+/// **Soundness contract is the same** — see [`ConfigSupertypeProvider`]
+/// docs. Projects that declare loose supertypes will see Unwrap produce
+/// candidates that parse but are semantically broken.
+pub struct ProjectSupertypeProvider {
+    kind_to_supertypes: HashMap<u16, Vec<u16>>,
+    supertype_to_subtypes: HashMap<u16, Vec<u16>>,
+}
+
+impl ProjectSupertypeProvider {
+    /// Build from a slice of (supertype_name, [subtype_names]) pairs.
+    /// Same resolution semantics as [`ConfigSupertypeProvider::new`]:
+    /// synthetic supertype names get high-offset IDs; unknown subtype
+    /// names are silently skipped.
+    pub fn new(language: &Language, mappings: &[(String, Vec<String>)]) -> Self {
+        let mut kind_to_supertypes: HashMap<u16, Vec<u16>> = HashMap::new();
+        let mut supertype_to_subtypes: HashMap<u16, Vec<u16>> = HashMap::new();
+        // Project-level synthetic IDs sit above grammars.toml's range
+        // (which uses 60000+) so the two never collide.
+        let mut next_synthetic_id: u16 = 62000;
+
+        for (supertype_name, subtype_names) in mappings {
+            let mut supertype_id = language.id_for_node_kind(supertype_name, true);
+            if supertype_id == 0 {
+                supertype_id = next_synthetic_id;
+                next_synthetic_id = next_synthetic_id.saturating_add(1);
+            }
+
+            let mut subtypes = Vec::new();
+            for subtype_name in subtype_names {
+                let subtype_id = language.id_for_node_kind(subtype_name, true);
+                if subtype_id == 0 {
+                    continue;
+                }
+                subtypes.push(subtype_id);
+                kind_to_supertypes
+                    .entry(subtype_id)
+                    .or_default()
+                    .push(supertype_id);
+            }
+
+            if !subtypes.is_empty() {
+                supertype_to_subtypes.insert(supertype_id, subtypes);
+            }
+        }
+
+        Self {
+            kind_to_supertypes,
+            supertype_to_subtypes,
+        }
+    }
+
+    pub fn has_supertypes(&self) -> bool {
+        !self.supertype_to_subtypes.is_empty()
+    }
+}
+
+impl SupertypeProvider for ProjectSupertypeProvider {
+    fn supertypes_for(&self, kind_id: u16) -> Vec<u16> {
+        self.kind_to_supertypes
+            .get(&kind_id)
+            .cloned()
+            .unwrap_or_default()
+    }
+
+    fn subtypes_for(&self, supertype_id: u16) -> Vec<u16> {
+        self.supertype_to_subtypes
+            .get(&supertype_id)
+            .cloned()
+            .unwrap_or_default()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

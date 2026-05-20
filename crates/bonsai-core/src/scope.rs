@@ -286,12 +286,11 @@ fn find_definition_in_scope_chain(
 
     // Fallback: check root scope (root may not be in containing_scopes if
     // the reference is at the very end of the file)
-    if !containing_scopes.iter().any(|s| s.node_id == root_id) {
-        if let Some(found) =
+    if !containing_scopes.iter().any(|s| s.node_id == root_id)
+        && let Some(found) =
             find_nearest_def_in_scope(root_id, name, ref_start, scope_definitions, definitions)
-        {
-            return Some(found);
-        }
+    {
+        return Some(found);
     }
 
     None
@@ -309,13 +308,12 @@ fn find_nearest_def_in_scope(
     let def_ids = scope_definitions.get(&scope_id)?;
     let mut best: Option<(usize, usize)> = None; // (def_id, start_byte)
     for &def_id in def_ids {
-        if let Some(def) = definitions.get(&def_id) {
-            if def.name == name
-                && def.start_byte <= ref_start
-                && best.is_none_or(|(_, best_start)| def.start_byte > best_start)
-            {
-                best = Some((def_id, def.start_byte));
-            }
+        if let Some(def) = definitions.get(&def_id)
+            && def.name == name
+            && def.start_byte <= ref_start
+            && best.is_none_or(|(_, best_start)| def.start_byte > best_start)
+        {
+            best = Some((def_id, def.start_byte));
         }
     }
     best.map(|(id, _)| id)

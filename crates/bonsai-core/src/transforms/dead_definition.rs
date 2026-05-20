@@ -104,10 +104,10 @@ impl Transform for DeadDefinitionTransform {
     }
 
     fn on_reduction(&mut self, tree: &Tree, source: &[u8], language: &Language) {
-        if let Some(ref query) = self.locals_query {
-            if let Some(analysis) = ScopeAnalysis::from_tree(tree, source, language, query) {
-                self.dead_ranges = compute_dead_ranges(&analysis, tree);
-            }
+        if let Some(ref query) = self.locals_query
+            && let Some(analysis) = ScopeAnalysis::from_tree(tree, source, language, query)
+        {
+            self.dead_ranges = compute_dead_ranges(&analysis, tree);
         }
     }
 }
