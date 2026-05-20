@@ -29,3 +29,10 @@ grammar = "grammars/tree-sitter-rust"
 extensions = ["rs"]
 src = "src"
 queries = "queries/rust"
+
+[[language]]
+name = "clojure"
+grammar = "grammars/tree-sitter-clojure"
+extensions = ["clj", "cljc", "cljs", "cljd", "edn", "bb", "lg"]
+src = "src"
+queries = "queries/clojure"
