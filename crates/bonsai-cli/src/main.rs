@@ -263,9 +263,12 @@ fn cmd_reduce(args: ReduceArgs) {
     if let Some(info) = lang_info {
         if let Some(locals_content) = info.locals_scm {
             if let Some(tree) = bonsai_core::parse::parse(&source, &language) {
-                if let Some(analysis) =
-                    bonsai_core::scope::ScopeAnalysis::from_tree(&tree, &source, &language, locals_content)
-                {
+                if let Some(analysis) = bonsai_core::scope::ScopeAnalysis::from_tree(
+                    &tree,
+                    &source,
+                    &language,
+                    locals_content,
+                ) {
                     let dead_defs = analysis.unreferenced_definitions();
                     if !dead_defs.is_empty() {
                         eprintln!(

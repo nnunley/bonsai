@@ -74,7 +74,6 @@ impl ContainsTest {
             calls: Arc::new(AtomicUsize::new(0)),
         }
     }
-
 }
 
 impl InterestingnessTest for ContainsTest {
@@ -258,24 +257,28 @@ fn prop_reducer_parallel_monotonic_python(tc: TestCase) {
 fn prop_cache_get_after_put(tc: TestCase) {
     let mut cache = TestCache::new();
 
-    let key: Vec<u8> = tc.draw(hegel::generators::vecs(integers::<u8>()).min_size(1).max_size(100));
+    let key: Vec<u8> = tc.draw(
+        hegel::generators::vecs(integers::<u8>())
+            .min_size(1)
+            .max_size(100),
+    );
     let value = tc.draw(hegel::generators::booleans());
 
     cache.put(&key, value);
     let result = cache.get(&key);
 
-    assert_eq!(
-        result,
-        Some(value),
-        "Cache should return the stored value"
-    );
+    assert_eq!(result, Some(value), "Cache should return the stored value");
 }
 
 #[hegel::test]
 fn prop_cache_overwrite(tc: TestCase) {
     let mut cache = TestCache::new();
 
-    let key: Vec<u8> = tc.draw(hegel::generators::vecs(integers::<u8>()).min_size(1).max_size(100));
+    let key: Vec<u8> = tc.draw(
+        hegel::generators::vecs(integers::<u8>())
+            .min_size(1)
+            .max_size(100),
+    );
 
     cache.put(&key, true);
     cache.put(&key, false);

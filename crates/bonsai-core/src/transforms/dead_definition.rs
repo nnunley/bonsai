@@ -169,8 +169,9 @@ mod tests {
             let candidates = transform.candidates(&node, source, &tree, &provider);
             if !candidates.is_empty() {
                 // The deletion should cover the "let unused = 1;" statement
-                let deleted_text =
-                    String::from_utf8_lossy(&source[candidates[0].start_byte..candidates[0].end_byte]);
+                let deleted_text = String::from_utf8_lossy(
+                    &source[candidates[0].start_byte..candidates[0].end_byte],
+                );
                 if deleted_text.contains("unused") {
                     found_dead = true;
                 }

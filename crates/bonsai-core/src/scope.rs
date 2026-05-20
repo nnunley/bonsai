@@ -130,7 +130,9 @@ impl ScopeAnalysis {
 
         // Sort scopes by start byte, then by descending end byte (larger scopes first)
         scope_nodes.sort_by(|a, b| {
-            a.start_byte.cmp(&b.start_byte).then(b.end_byte.cmp(&a.end_byte))
+            a.start_byte
+                .cmp(&b.start_byte)
+                .then(b.end_byte.cmp(&a.end_byte))
         });
 
         // Now collect definitions and references
@@ -157,7 +159,10 @@ impl ScopeAnalysis {
                             scope_node_id: scope_id,
                         };
                         definitions.insert(node.id(), def);
-                        scope_definitions.entry(scope_id).or_default().push(node.id());
+                        scope_definitions
+                            .entry(scope_id)
+                            .or_default()
+                            .push(node.id());
                     } else if Some(capture.index) == ref_idx {
                         let ref_ = Reference {
                             node_id: node.id(),
@@ -282,13 +287,9 @@ fn find_definition_in_scope_chain(
     // Fallback: check root scope (root may not be in containing_scopes if
     // the reference is at the very end of the file)
     if !containing_scopes.iter().any(|s| s.node_id == root_id) {
-        if let Some(found) = find_nearest_def_in_scope(
-            root_id,
-            name,
-            ref_start,
-            scope_definitions,
-            definitions,
-        ) {
+        if let Some(found) =
+            find_nearest_def_in_scope(root_id, name, ref_start, scope_definitions, definitions)
+        {
             return Some(found);
         }
     }
@@ -309,10 +310,12 @@ fn find_nearest_def_in_scope(
     let mut best: Option<(usize, usize)> = None; // (def_id, start_byte)
     for &def_id in def_ids {
         if let Some(def) = definitions.get(&def_id) {
-            if def.name == name && def.start_byte <= ref_start
-                && best.is_none_or(|(_, best_start)| def.start_byte > best_start) {
-                    best = Some((def_id, def.start_byte));
-                }
+            if def.name == name
+                && def.start_byte <= ref_start
+                && best.is_none_or(|(_, best_start)| def.start_byte > best_start)
+            {
+                best = Some((def_id, def.start_byte));
+            }
         }
     }
     best.map(|(id, _)| id)
@@ -349,10 +352,7 @@ mod tests {
         );
 
         // x should be referenced
-        let x_def = analysis
-            .definitions
-            .values()
-            .find(|d| d.name == "x");
+        let x_def = analysis.definitions.values().find(|d| d.name == "x");
         assert!(x_def.is_some(), "Should find definition of 'x'");
 
         if let Some(def) = x_def {
@@ -424,9 +424,6 @@ mod tests {
             &lang,
             "invalid query that won't parse",
         );
-        assert!(
-            result.is_none(),
-            "Invalid query should return None"
-        );
+        assert!(result.is_none(), "Invalid query should return None");
     }
 }

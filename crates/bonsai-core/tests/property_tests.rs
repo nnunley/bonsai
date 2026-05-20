@@ -246,7 +246,11 @@ fn prop_error_set_shift_invariant(tc: TestCase) {
     }
 
     // Delete some bytes from the beginning (before the error region)
-    let delete_len = tc.draw(integers::<usize>().min_value(1).max_value(insert_pos.min(5).max(1)));
+    let delete_len = tc.draw(
+        integers::<usize>()
+            .min_value(1)
+            .max_value(insert_pos.clamp(1, 5)),
+    );
     if delete_len > source.len() {
         return;
     }

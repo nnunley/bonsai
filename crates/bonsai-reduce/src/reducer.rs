@@ -268,8 +268,7 @@ pub fn reduce(
                             return false;
                         }
                         if config.max_tests > 0
-                            && tests_run + atomic_tests.load(Ordering::Relaxed)
-                                >= config.max_tests
+                            && tests_run + atomic_tests.load(Ordering::Relaxed) >= config.max_tests
                         {
                             return false;
                         }
@@ -475,7 +474,6 @@ mod tests {
                 call_count: Arc::new(AtomicUsize::new(0)),
             }
         }
-
     }
 
     impl InterestingnessTest for ContainsTest {
@@ -802,7 +800,10 @@ mod tests {
 
         let result = reduce(source, &test, config, None);
         // Should have aborted — returned original source (no reductions)
-        assert_eq!(result.reductions, 0, "Should not have accepted any reductions");
+        assert_eq!(
+            result.reductions, 0,
+            "Should not have accepted any reductions"
+        );
         // Should have run a bounded number of tests (initial + a few errors), not exhausted all candidates
         assert!(
             result.tests_run <= 10,

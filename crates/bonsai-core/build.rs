@@ -192,9 +192,17 @@ fn generate_languages_rs(out_dir: &Path, languages: &[LanguageEntry], workspace_
     writeln!(code, "pub struct LanguageInfo {{").unwrap();
     writeln!(code, "    pub name: &'static str,").unwrap();
     writeln!(code, "    pub extensions: &'static [&'static str],").unwrap();
-    writeln!(code, "    /// Embedded contents of locals.scm, if the file exists in the queries directory.").unwrap();
+    writeln!(
+        code,
+        "    /// Embedded contents of locals.scm, if the file exists in the queries directory."
+    )
+    .unwrap();
     writeln!(code, "    pub locals_scm: Option<&'static str>,").unwrap();
-    writeln!(code, "    /// Embedded contents of tags.scm, if the file exists in the queries directory.").unwrap();
+    writeln!(
+        code,
+        "    /// Embedded contents of tags.scm, if the file exists in the queries directory."
+    )
+    .unwrap();
     writeln!(code, "    pub tags_scm: Option<&'static str>,").unwrap();
     writeln!(code, "}}").unwrap();
     writeln!(code).unwrap();
@@ -287,11 +295,7 @@ fn generate_languages_rs(out_dir: &Path, languages: &[LanguageEntry], workspace_
         "/// Get supertype mappings from node-types.json for a language."
     )
     .unwrap();
-    writeln!(
-        code,
-        "/// Returns (supertype_name, [subtype_names]) pairs."
-    )
-    .unwrap();
+    writeln!(code, "/// Returns (supertype_name, [subtype_names]) pairs.").unwrap();
     writeln!(
         code,
         "pub fn get_node_types_supertypes(name: &str) -> &'static [(&'static str, &'static [&'static str])] {{"
@@ -304,7 +308,12 @@ fn generate_languages_rs(out_dir: &Path, languages: &[LanguageEntry], workspace_
         let mappings = parse_node_types(&grammar_dir, &lang.src);
 
         if mappings.is_empty() {
-            writeln!(code, "        \"{}\" => &[],", escape_rust_string(&lang.name)).unwrap();
+            writeln!(
+                code,
+                "        \"{}\" => &[],",
+                escape_rust_string(&lang.name)
+            )
+            .unwrap();
         } else {
             writeln!(code, "        \"{}\" => &[", escape_rust_string(&lang.name)).unwrap();
             for (supertype, subtypes) in &mappings {

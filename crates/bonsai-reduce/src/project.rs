@@ -122,16 +122,13 @@ impl ProjectFileSet {
 
             // Skip symlinks (use file_type() which doesn't follow symlinks)
             if file_type.is_symlink() {
-                eprintln!(
-                    "warning: skipping symlink: {}",
-                    path.display()
-                );
+                eprintln!("warning: skipping symlink: {}", path.display());
                 continue;
             }
 
-            let relative = path.strip_prefix(base).map_err(|e| {
-                io::Error::new(io::ErrorKind::Other, e.to_string())
-            })?;
+            let relative = path
+                .strip_prefix(base)
+                .map_err(|e| io::Error::other(e.to_string()))?;
 
             if file_type.is_dir() {
                 let dir_name = path.file_name().unwrap_or_default().to_string_lossy();
@@ -191,15 +188,12 @@ impl ProjectFileSet {
             ));
         }
 
-        let contents = self
-            .files
-            .remove(path)
-            .ok_or_else(|| {
-                io::Error::new(
-                    io::ErrorKind::NotFound,
-                    format!("file not in project: {}", path.display()),
-                )
-            })?;
+        let contents = self.files.remove(path).ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::NotFound,
+                format!("file not in project: {}", path.display()),
+            )
+        })?;
 
         let cmd = ExcludeCommand {
             relative_path: path.to_path_buf(),
@@ -263,7 +257,7 @@ impl ProjectFileSet {
             .filter(|(p, _)| !self.roots.contains(*p))
             .map(|(p, c)| (p.clone(), c.len()))
             .collect();
-        deps.sort_by(|a, b| b.1.cmp(&a.1));
+        deps.sort_by_key(|b| std::cmp::Reverse(b.1));
         deps.into_iter().map(|(p, _)| p).collect()
     }
 
@@ -308,10 +302,16 @@ mod tests {
     #[test]
     fn test_from_directory_loads_files() {
         let (dir, root, _dep) = setup_test_dir();
-        let pfs = ProjectFileSet::from_directory(dir.path(), &[root.clone()]).unwrap();
+        let pfs = ProjectFileSet::from_directory(dir.path(), std::slice::from_ref(&root)).unwrap();
 
-        assert_eq!(pfs.get_file(Path::new("main.py")), Some(b"print('hello')" as &[u8]));
-        assert_eq!(pfs.get_file(Path::new("lib.py")), Some(b"def helper(): pass" as &[u8]));
+        assert_eq!(
+            pfs.get_file(Path::new("main.py")),
+            Some(b"print('hello')" as &[u8])
+        );
+        assert_eq!(
+            pfs.get_file(Path::new("lib.py")),
+            Some(b"def helper(): pass" as &[u8])
+        );
         assert_eq!(
             pfs.get_file(Path::new("pkg/util.py")),
             Some(b"# util" as &[u8])
@@ -333,10 +333,7 @@ mod tests {
     #[test]
     fn test_from_directory_root_not_found() {
         let (dir, _, _) = setup_test_dir();
-        let result = ProjectFileSet::from_directory(
-            dir.path(),
-            &[PathBuf::from("nonexistent.py")],
-        );
+        let result = ProjectFileSet::from_directory(dir.path(), &[PathBuf::from("nonexistent.py")]);
         assert!(result.is_err());
         let err = result.err().expect("should be an error");
         assert_eq!(err.kind(), io::ErrorKind::NotFound);
@@ -369,11 +366,7 @@ mod tests {
         fs::write(dir.path().join("medium.py"), b"abcdef").unwrap(); // 6 bytes
         fs::write(dir.path().join("large.py"), b"abcdefghij").unwrap(); // 10 bytes
 
-        let pfs = ProjectFileSet::from_directory(
-            dir.path(),
-            &[PathBuf::from("root.py")],
-        )
-        .unwrap();
+        let pfs = ProjectFileSet::from_directory(dir.path(), &[PathBuf::from("root.py")]).unwrap();
 
         let deps = pfs.dependency_files();
         // Should be sorted largest first
@@ -395,7 +388,8 @@ mod tests {
         let original = pfs.get_file(path).unwrap().to_vec();
 
         // Modify
-        pfs.update_file(path, b"print('modified')".to_vec()).unwrap();
+        pfs.update_file(path, b"print('modified')".to_vec())
+            .unwrap();
         assert_eq!(pfs.get_file(path), Some(b"print('modified')" as &[u8]));
         assert_eq!(
             fs::read(pfs.temp_dir_path().join(path)).unwrap(),
@@ -405,10 +399,7 @@ mod tests {
         // Undo
         pfs.undo_last(path).unwrap();
         assert_eq!(pfs.get_file(path).unwrap(), original.as_slice());
-        assert_eq!(
-            fs::read(pfs.temp_dir_path().join(path)).unwrap(),
-            original
-        );
+        assert_eq!(fs::read(pfs.temp_dir_path().join(path)).unwrap(), original);
     }
 
     #[test]
@@ -437,7 +428,7 @@ mod tests {
 
         let result = pfs.exclude_file(Path::new("main.py"));
         assert!(result.is_err());
-        let err = result.err().expect("should be an error");
+        let err = result.expect_err("should be an error");
         assert_eq!(err.kind(), io::ErrorKind::InvalidInput);
         assert!(err.to_string().contains("cannot exclude root"));
     }
@@ -500,11 +491,7 @@ mod tests {
             fs::write(d.join("junk.txt"), b"skip me").unwrap();
         }
 
-        let pfs = ProjectFileSet::from_directory(
-            dir.path(),
-            &[PathBuf::from("main.rs")],
-        )
-        .unwrap();
+        let pfs = ProjectFileSet::from_directory(dir.path(), &[PathBuf::from("main.rs")]).unwrap();
 
         assert_eq!(pfs.get_file(Path::new("target/junk.txt")), None);
         assert_eq!(pfs.get_file(Path::new("node_modules/junk.txt")), None);
