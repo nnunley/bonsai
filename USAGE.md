@@ -7,18 +7,19 @@ This guide walks through using Bonsai to reduce a buggy source file to the small
 When you find a bug in a compiler, interpreter, or other language tool, the file that triggers it is often large and full of code unrelated to the bug. **Test case reduction** systematically removes code until only the essential trigger remains.
 
 Bonsai does this by:
+
 1. Parsing your file into a syntax tree (using tree-sitter)
 2. Trying to delete or simplify subtrees
-3. Checking each candidate against your "interestingness test"
+3. Checking each candidate against your "interesting-ness test"
 4. Keeping only changes where the test still passes (the bug still triggers)
 
 The result is a minimal file that reproduces the bug — ideal for filing issues or debugging.
 
-## Writing an Interestingness Test
+## Writing an Interesting-ness Test
 
-The interestingness test is a shell command that exits `0` when the input "still has the bug" and non-zero otherwise. Bonsai writes each candidate to a temporary file and passes the path as the last argument.
+The interesting-ness test is a shell command that exits `0` when the input "still has the bug" and non-zero otherwise. Bonsai writes each candidate to a temporary file and passes the path as the last argument.
 
-### Basic pattern
+### Basic interesting-ness pattern
 
 ```bash
 #!/bin/bash
@@ -32,13 +33,16 @@ Make it executable: `chmod +x check.sh`
 
 - **Be specific.** Match the exact error message, not just "error". Otherwise the reducer may find a shorter file that triggers a *different* error.
 - **Check for the right failure mode.** If the bug is a crash (segfault), check the exit code:
+
   ```bash
   #!/bin/bash
   my-compiler "$1" 2>/dev/null
   test $? -eq 139  # SIGSEGV on Linux
   ```
+
 - **Keep it fast.** The test runs hundreds or thousands of times. If your tool is slow, set a timeout (`--test-timeout 5s`) so hung processes don't stall reduction.
 - **Test the test first.** Run it manually on your original file to confirm it exits 0:
+
   ```bash
   ./check.sh original.py && echo "INTERESTING" || echo "NOT INTERESTING"
   ```
@@ -49,12 +53,12 @@ Make it executable: `chmod +x check.sh`
 
 Suppose `big_module.py` (500 lines) triggers an internal error in `my-linter`:
 
-```
+```shell
 $ my-linter big_module.py
 my-linter: internal error: unexpected NoneType in resolve_scope
 ```
 
-**Step 1: Write the interestingness test**
+### Step 1: Write the interesting-ness test
 
 ```bash
 #!/bin/bash
@@ -62,14 +66,14 @@ my-linter: internal error: unexpected NoneType in resolve_scope
 my-linter "$1" 2>&1 | grep -q "unexpected NoneType in resolve_scope"
 ```
 
-**Step 2: Verify the test works**
+### Step 2: Verify the test works
 
 ```bash
 $ ./check_linter.sh big_module.py && echo "PASS" || echo "FAIL"
 PASS
 ```
 
-**Step 3: Run Bonsai**
+### Step 3: Run Bonsai
 
 ```bash
 $ bonsai reduce --test "./check_linter.sh" big_module.py > reduced.py
@@ -77,7 +81,7 @@ bonsai: 12458 -> 847 bytes (93.2% reduced) | tests: 342 | reductions: 28 | cache
 bonsai: done in 45s — 12458 -> 127 bytes (99.0% reduced)
 ```
 
-**Step 4: Inspect the result**
+### Step 4: Inspect the result
 
 ```bash
 $ cat reduced.py
@@ -87,7 +91,7 @@ class A:
         x.y
 ```
 
-**Step 5: Verify**
+### Step 5: Verify
 
 ```bash
 $ my-linter reduced.py
@@ -99,7 +103,7 @@ The 500-line file is now 4 lines that pinpoint the exact trigger.
 ### Example: Reducing a JavaScript file that crashes Node.js
 
 ```bash
-# Interestingness test: Node.js segfaults (exit code 139 on Linux, 134 on macOS abort)
+# Interesting-ness test: Node.js segfaults (exit code 139 on Linux, 134 on macOS abort)
 #!/bin/bash
 node "$1" 2>/dev/null; test $? -gt 128
 
@@ -121,7 +125,7 @@ bonsai reduce --test "python3 -c 'import ast; ast.parse(open(\"\$1\").read())' 2
 
 ## Command Reference
 
-```
+```bash
 bonsai reduce [OPTIONS] --test <TEST> <INPUT>
 ```
 
@@ -197,7 +201,7 @@ use bonsai_core::transforms::unwrap::UnwrapTransform;
 use bonsai_reduce::reducer::{reduce, ReducerConfig};
 use bonsai_reduce::{InterestingnessTest, TestResult};
 
-// Define your interestingness test
+// Define your interesting-ness test
 struct ContainsPattern(Vec<u8>);
 
 impl InterestingnessTest for ContainsPattern {
@@ -306,11 +310,12 @@ Bonsai implements the [Perses algorithm](https://doi.org/10.1109/ICSE.2018.00046
    - **Unwrap** — replace with a type-compatible child
    - **Dead definition removal** — delete unreferenced definitions (scope-aware)
 4. **Validate** each candidate by reparsing — reject if it introduces parse errors
-5. **Test** valid candidates for interestingness (does the bug still trigger?)
+5. **Test** valid candidates for interesting-ness (does the bug still trigger?)
 6. **Accept** the first interesting candidate, rebuild the queue, repeat
 7. **Stop** when the queue is exhausted or limits are reached
 
 Key properties:
+
 - Every intermediate result is syntactically valid (guaranteed by tree-sitter reparsing)
 - Largest nodes are tried first, maximizing reduction per test invocation
 - Test results are cached (typically 24-62% cache hit rate)
@@ -321,6 +326,7 @@ Key properties:
 ### "initial input is not interesting"
 
 Your test command doesn't return exit code 0 on the original file. Debug by running it manually:
+
 ```bash
 ./check.sh input.py; echo "exit code: $?"
 ```
@@ -345,6 +351,7 @@ By default, Bonsai handles files with pre-existing parse errors using lenient mo
 ### Language not detected
 
 Specify the language explicitly with `--lang`:
+
 ```bash
 bonsai reduce --test "./check.sh" --lang python input.txt
 ```
