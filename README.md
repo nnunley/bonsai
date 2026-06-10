@@ -2,7 +2,7 @@
 
 Syntax-guided test case reducer and grammar-based fuzzer using [tree-sitter](https://tree-sitter.github.io/) grammars.
 
-Bonsai implements the [Perses algorithm](https://doi.org/10.1109/ICSE.2018.00046) (Sun et al., ICSE 2018) adapted for tree-sitter, producing smaller reduced outputs than traditional delta debugging while guaranteeing syntactic validity at every step.
+Bonsai implements the [Perses algorithm](https://doi.org/10.1145/3180155.3180236) (Sun et al., ICSE 2018) adapted for tree-sitter, producing smaller reduced outputs than traditional delta debugging while guaranteeing syntactic validity at every step.
 
 ## Quick Start
 
@@ -129,7 +129,7 @@ When a grammar ships a `locals.scm` file (tree-sitter's scope/definition/referen
 
 | Paper | What it contributes |
 |-------|-------------------|
-| [Perses](https://doi.org/10.1109/ICSE.2018.00046) (Sun et al., ICSE 2018) | Priority-queue reduction, syntactic validity guarantee |
+| [Perses](https://doi.org/10.1145/3180155.3180236) (Sun et al., ICSE 2018) | Priority-queue reduction, syntactic validity guarantee |
 | [Vulcan](https://doi.org/10.1145/3586049) (Xu et al., OOPSLA 2023) | Transforms to escape 1-minimality (future work) |
 | [HDD](https://doi.org/10.1145/1134285.1134307) (Misherghi & Su, ICSE 2006) | Original hierarchical delta debugging |
 | [T-Rec](https://doi.org/10.1145/3690631) (Xu et al., TOSEM 2024) | Token-level reduction (future work) |
