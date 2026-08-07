@@ -56,7 +56,7 @@ my-compiler "$1" 2>&1 | grep -q "internal error"
 
 ### Grammar Support
 
-Bonsai uses tree-sitter grammars vendored as git submodules. Currently supported:
+Bonsai uses released tree-sitter grammar crates, with Bonsai-owned queries and compatibility metadata kept separately in `bonsai-core`. Currently supported:
 
 | Language   | Extensions        |
 |------------|-------------------|
@@ -64,13 +64,13 @@ Bonsai uses tree-sitter grammars vendored as git submodules. Currently supported
 | JavaScript | .js, .mjs, .cjs   |
 | Rust       | .rs               |
 
-Adding a new language requires adding a tree-sitter grammar submodule and an entry in `grammars.toml`.
+Adding a new language requires a released tree-sitter grammar crate plus an entry in `crates/bonsai-core/grammars.toml`. Bonsai-specific queries and compatibility metadata stay local rather than patching upstream grammars.
 
 ## Installation
 
 ```bash
 # From source
-git clone --recurse-submodules https://github.com/nnunley/bonsai.git
+git clone https://github.com/nnunley/bonsai.git
 cd bonsai
 cargo install --path crates/bonsai-cli
 ```

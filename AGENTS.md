@@ -17,7 +17,7 @@ openspec/changes/add-bonsai-core/
     ├── core/spec.md     # Parse tree, SupertypeProvider, transforms, validity
     ├── reducer/spec.md  # Priority queue, interestingness test, caching, output
     ├── fuzzer/spec.md   # AST splicing, target interface, dedup, persistence
-    └── grammar-system/spec.md  # Submodules, registry, build system
+    └── grammar-system/spec.md  # Grammar crates, registry, build system
 ```
 
 **Read these before implementing anything.** The design.md has critical notes about tree-sitter API limitations (lookahead is a hint not an oracle, supertypes are grammar-dependent, node handles invalidate on reparse).
@@ -52,7 +52,7 @@ Issues use two relationship types:
 - **`parent_of`** — umbrella grouping. A parent epic auto-completes when all its children close. Parents are NOT work items — they're progress trackers.
 
 Five umbrella epics group the concrete tasks:
-- **Scaffolding** — workspace, submodules, registry, build system
+- **Scaffolding** — workspace, grammar dependencies, registry, build system
 - **Core Library** — parsing, SupertypeProvider, compatibility, transforms, validity
 - **Reducer** — priority queue, reduction loop, interestingness test, caching, output
 - **Fuzzer** — corpus, splicing, dedup, persistence, auto-reduction
@@ -86,12 +86,12 @@ make cover      # cargo tarpaulin
 ## Architecture
 
 Rust workspace with four crates:
-- `crates/bonsai-core/` — tree-sitter parsing, SupertypeProvider, transforms, validity checking. Has `build.rs` for grammar compilation.
+- `crates/bonsai-core/` — tree-sitter parsing, SupertypeProvider, transforms, validity checking. Has `build.rs` for registry and metadata generation; grammar crates compile their own parsers.
 - `crates/bonsai-reduce/` — Perses-style priority queue reducer with parallel testing
 - `crates/bonsai-fuzz/` — subprocess target execution harness and crash interest criteria (AST-splicing fuzzer planned)
 - `crates/bonsai-cli/` — unified CLI (`bonsai reduce`, `bonsai fuzz`, `bonsai languages`)
 
-Grammars are vendored as git submodules under `grammars/` and registered in `grammars.toml`.
+Released grammar crates are registered in `crates/bonsai-core/grammars.toml`; Bonsai-owned queries and compatibility augmentations live alongside that registry.
 
 ## Key Design Decisions
 

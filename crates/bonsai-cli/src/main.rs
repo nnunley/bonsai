@@ -268,7 +268,7 @@ fn cmd_reduce(args: ReduceArgs) {
 
     // Set up provider chain (resolved in this order, results merged):
     //   1. LanguageApiProvider     — runtime tree-sitter Language::supertypes()
-    //   2. NodeTypesProvider       — parsed from node-types.json at build
+    //   2. NodeTypesProvider       — parsed from the grammar crate's NODE_TYPES
     //   3. ConfigSupertypeProvider — hand-declared in grammars.toml
     //   4. ProjectSupertypeProvider — declared in bonsai.toml (per-project)
     //

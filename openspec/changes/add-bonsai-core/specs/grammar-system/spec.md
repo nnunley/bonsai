@@ -1,11 +1,11 @@
 ## ADDED Requirements
 
-### Requirement: Vendored Grammar Submodules
-The system SHALL support tree-sitter grammars as git submodules in a grammars/ directory, following difftastic's vendoring pattern.
+### Requirement: Released Grammar Dependencies
+The system SHALL consume published tree-sitter grammar crates through Cargo and keep Bonsai-specific metadata separate from upstream parser sources.
 
 #### Scenario: Add a new grammar
-- **WHEN** a tree-sitter grammar is added as a git submodule under grammars/
-- **THEN** it can be registered in grammars.toml and compiled at build time
+- **WHEN** a released tree-sitter grammar crate is added as a dependency and registered in bonsai-core/grammars.toml
+- **THEN** Cargo obtains and compiles it without Git submodule initialization
 
 ### Requirement: Grammar Registry
 The system SHALL maintain a grammars.toml file mapping language names to grammar paths, file extensions, source directories, and optional locals query files for scope analysis. Supertypes are extracted automatically from node-types.json at build time.
@@ -35,15 +35,15 @@ The system SHALL maintain a grammars.toml file mapping language names to grammar
 - **THEN** scope-aware transforms are skipped for that language
 
 ### Requirement: Build-Time Grammar Compilation
-The system SHALL compile tree-sitter grammar C/C++ sources at build time via build.rs in bonsai-core, including external scanners, and generate a Rust module for language lookup.
+The system SHALL link released tree-sitter grammar crates and generate a Rust module for language lookup and Bonsai-owned metadata via build.rs in bonsai-core.
 
 #### Scenario: Successful compilation with parser only
-- **WHEN** a grammar has only parser.c
-- **THEN** it is compiled and available at runtime
+- **WHEN** a registered grammar crate exports `LANGUAGE` and `NODE_TYPES`
+- **THEN** it is compiled by Cargo and available at runtime
 
 #### Scenario: Successful compilation with external scanner
-- **WHEN** a grammar has scanner.c or scanner.cc alongside parser.c
-- **THEN** both are compiled and linked correctly
+- **WHEN** a grammar crate requires an external scanner
+- **THEN** the grammar crate owns its compilation and linking
 
 #### Scenario: List supported languages
 - **WHEN** `bonsai languages` is run

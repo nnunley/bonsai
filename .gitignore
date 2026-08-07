@@ -1,4 +1,5 @@
 /target/
+.hegel/
 
 !AGENTS.md
 !CLAUDE.md

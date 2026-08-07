@@ -1,0 +1,39 @@
+# Bonsai language registry
+# Maps language names to released tree-sitter grammar crates.
+# The build system (crates/bonsai-core/build.rs) reads this file to generate
+# language lookup and Bonsai-specific compatibility metadata.
+#
+# Grammar parsers and upstream node-types.json data come from Cargo releases.
+# Bonsai augmentations belong here or under queries/, never in patched grammar
+# sources, so updating an upstream parser remains an explicit dependency update.
+#
+# Optional fields:
+#   queries — directory containing Bonsai-owned .scm query files
+#   supertypes — Bonsai compatibility relationships absent from the release
+
+[[language]]
+name = "python"
+rust_crate = "tree_sitter_python"
+extensions = ["py", "pyi"]
+queries = "queries/python"
+# tree-sitter-python 0.25.0 represents these as children of the
+# expression_statement wrapper; expose the intended compatibility locally.
+supertypes = { expression_statement = ["assignment", "augmented_assignment", "expression", "yield"] }
+
+[[language]]
+name = "javascript"
+rust_crate = "tree_sitter_javascript"
+extensions = ["js", "mjs", "cjs"]
+queries = "queries/javascript"
+
+[[language]]
+name = "rust"
+rust_crate = "tree_sitter_rust"
+extensions = ["rs"]
+queries = "queries/rust"
+
+[[language]]
+name = "clojure"
+rust_crate = "tree_sitter_clojure"
+extensions = ["clj", "cljc", "cljs", "cljd", "edn", "bb", "lg"]
+queries = "queries/clojure"

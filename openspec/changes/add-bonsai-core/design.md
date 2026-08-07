@@ -7,15 +7,12 @@ bonsai/
 ├── Cargo.toml              # workspace root
 ├── crates/
 │   ├── bonsai-core/        # tree manipulation, node compatibility, transforms
-│   │   └── build.rs        # compiles grammars, generates language registry
+│   │   ├── build.rs        # generates language registry
+│   │   ├── grammars.toml   # released grammar crates + local metadata
+│   │   └── queries/        # Bonsai-owned tree-sitter queries
 │   ├── bonsai-reduce/      # Perses reduction algorithm
 │   ├── bonsai-fuzz/        # AST splicing fuzzer
 │   └── bonsai-cli/         # unified CLI (bonsai reduce / bonsai fuzz)
-├── grammars/               # vendored tree-sitter grammars (git submodules)
-│   ├── tree-sitter-python/
-│   │   └── src/
-│   │       └── node-types.json  # supertypes extracted automatically at build time
-│   └── ...
 └── tests/                  # integration tests with real grammars
 ```
 
@@ -267,44 +264,41 @@ The fuzzer reports to stderr:
 
 ## Grammar Plugin System
 
-Following difftastic's pattern:
+Following Difftastic's preferred pattern, Bonsai uses published grammar crates
+from crates.io. Parser implementations remain pure upstream releases; Bonsai's
+queries and compatibility augmentations live in `bonsai-core`.
 
-### Directory Structure
-```
-grammars/
-├── tree-sitter-python/      # git submodule
-├── tree-sitter-javascript/  # git submodule
-├── tree-sitter-rust/        # git submodule
-└── ...
-```
+### Dependencies
+
+Each supported language is an explicitly pinned Cargo dependency. `Cargo.lock`
+makes source builds reproducible, and updates are ordinary reviewed dependency
+changes rather than copied-source refreshes.
 
 ### Registration
 
-A `grammars.toml` file maps languages to their grammars:
+`crates/bonsai-core/grammars.toml` maps languages to Rust crate identifiers and
+Bonsai-owned metadata:
 
 ```toml
 [[language]]
 name = "python"
-grammar = "grammars/tree-sitter-python"
+rust_crate = "tree_sitter_python"
 extensions = ["py", "pyi"]
-src = "src"  # relative path to parser.c within the grammar
-
-[[language]]
-name = "rust"
-grammar = "grammars/tree-sitter-rust"
-extensions = ["rs"]
-src = "src"
+queries = "queries/python"
+supertypes = { expression_statement = ["assignment", "augmented_assignment", "expression", "yield"] }
 ```
 
 ### Build System
 
-`build.rs` (in `bonsai-core`) reads `grammars.toml`, compiles each grammar's C/C++ source via the `cc` crate, and generates a Rust module with:
-- A function to get a `tree_sitter::Language` by name or file extension
-- A list of supported languages for CLI help
+`build.rs` reads the package-local registry and generates:
 
-The build script handles **external scanners** (`scanner.c` or `scanner.cc`) which many grammars require for correct parsing (Python indentation, JavaScript template literals, etc.). It detects scanner files in the grammar's `src/` directory and compiles them alongside `parser.c`.
+- language lookup by name and file extension using each crate's `LANGUAGE`
+- access to each release's embedded `NODE_TYPES`
+- the supported-language list and embedded Bonsai query files
+- Bonsai-owned compatibility augmentations from `grammars.toml`
 
-This is simpler than difftastic's approach (which uses per-grammar feature flags) — we always compile all registered grammars.
+The grammar crates own compilation of their generated C parsers and external
+scanners. Bonsai does not patch or copy those implementation sources.
 
 ## CLI Design
 

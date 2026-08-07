@@ -2,7 +2,7 @@
 
 ```
 1.1 (workspace)
-├── 1.2 (submodules)
+├── 1.2 (grammar dependencies)
 │   └── 1.3 (grammars.toml)
 │       └── 1.4 (build.rs)
 │           ├── 2.1 (parse/reparse)
@@ -82,21 +82,21 @@ CLI (5.x) is last — needs both reducer and fuzzer.
 
 ---
 
-### Task 1.2: Set up grammar submodules
+### Task 1.2: Set up released grammar dependencies
 
-**Requirement:** Vendored Grammar Submodules
+**Requirement:** Released Grammar Dependencies
 
 #### RED
-- Write a test that: checks `grammars/tree-sitter-python/src/parser.c` exists
-- Expected failure: no grammars directory or submodules
-- If it passes unexpectedly: submodules were already added
+- Write a test that loads the Python grammar through the registry
+- Expected failure: no grammar crate dependency or registry entry
+- If it passes unexpectedly: grammar dependencies were already configured
 
 #### GREEN
-- Create `grammars/` directory
-- Add git submodules: tree-sitter-python, tree-sitter-javascript, tree-sitter-rust
+- Add released tree-sitter-python, tree-sitter-javascript, and tree-sitter-rust Cargo dependencies
+- Keep Bonsai-owned compatibility metadata separate from upstream grammar sources
 
 #### REFACTOR
-- Verify `.gitmodules` is clean and submodule paths are consistent
+- Pin and lock compatible grammar releases
 
 ---
 
@@ -129,8 +129,8 @@ CLI (5.x) is last — needs both reducer and fuzzer.
 - If it passes unexpectedly: build system was already in place
 
 #### GREEN
-- Implement `build.rs` in `crates/bonsai-core/` that reads `grammars.toml`
-- Compile each grammar's C source via `cc` crate, detecting and compiling `scanner.c`/`scanner.cc` alongside `parser.c`
+- Implement `build.rs` in `crates/bonsai-core/` that reads its package-local `grammars.toml`
+- Generate references to each grammar crate's exported `LANGUAGE` and `NODE_TYPES` constants
 - Generate a Rust module with `get_language(name)`, `get_language_by_extension(ext)`, and `list_languages()`
 - Set `cargo:rerun-if-changed` for grammar source files
 

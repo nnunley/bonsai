@@ -15,14 +15,14 @@ This is a greenfield project. We're building:
 - **Core library** (`bonsai-core`): Tree-sitter parse tree manipulation, node type compatibility checking, and the transform trait system that both reducer and fuzzer build on.
 - **Reducer** (`bonsai-reduce`): Perses-style priority-queue reduction with syntactic validity guarantees. Architected to support Vulcan-style transforms later.
 - **Fuzzer** (`bonsai-fuzz`): Grammar-guided test case generation via AST splicing from a corpus.
-- **Grammar plugin system**: Difftastic-style git submodule approach with a registration system for adding tree-sitter grammars.
+- **Grammar plugin system**: Difftastic-style released grammar crates with a registration system for Bonsai-owned metadata.
 - **CLI** (`bonsai`): Unified CLI with `bonsai reduce` and `bonsai fuzz` subcommands. Shell-command interestingness test interface.
 - **Library API**: Embeddable Rust API for both reduction and fuzzing.
 
 ## Impact
 
 - New project, no breaking changes.
-- Depends on: `tree-sitter` Rust crate, vendored grammar submodules.
+- Depends on: `tree-sitter` and released tree-sitter grammar crates.
 - Target users: language developers, compiler engineers, fuzzing practitioners.
 
 ## Research Basis
